@@ -1,0 +1,99 @@
+We need to build a web-based Office Asset & Expense Management System with the following features:
+
+🔹 Product & Asset Management
+
+Admin can add all available office products/assets such as:
+
+Desktop systems, laptops
+
+DSLR camera, camera charger
+
+Water cans
+
+Portable printer
+
+Voter list documents
+
+Any other office items
+
+All assets should be displayed in a dashboard view with status (Available / Taken).
+
+🔹 Borrowing & Tracking System
+
+Employees can log in with their credentials.
+
+If someone borrows an item (e.g., system, voter list, portable printer):
+
+They must fill out a form with:
+
+Item name
+
+Borrower’s name (auto-filled from login)
+
+Date & time taken
+
+Due date & time for return
+
+The system should store this entry in the database.
+
+Reminder notifications should be sent to the borrower before the due date to hand over the item.
+
+Items must be marked as Returned once submitted back.
+
+🔹 Expense Management
+
+Employees (field staff/field boys) can apply for expenses through a request form.
+
+Expense request fields:
+
+Date
+
+Employee name (auto-filled from login)
+
+Expense type (e.g., travel, food, field expenses, watercan charges, salary for housekeeper, etc.)
+
+Expense amount
+
+Description / Reason
+
+Managers can approve or reject expenses.
+
+Approved expenses should be marked as Pending Payment or Paid.
+
+🔹 Salary & Recurring Charges
+
+Track monthly salary for housekeepers.
+
+Track recurring charges like watercan bills.
+
+These should be shown in the expense management section.
+
+🔹 Reports & Export
+
+Admin and employees should be able to view:
+
+All borrowed items (current & past)
+
+All expense requests (approved, rejected, pending)
+
+Salary & watercan charge history
+
+Provide an Export to Excel option for:
+
+All transactions
+
+Borrowed items log
+
+Expense details
+
+The exported Excel sheet should be in a simplified, structured format for easy analysis.
+
+🔹 Additional Requirements
+
+User-friendly and responsive design.
+
+Role-based access (Admin, Employee).
+
+Notifications/reminders for borrowed items.
+
+Secure login & authentication.
