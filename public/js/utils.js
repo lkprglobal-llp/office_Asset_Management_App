@@ -24,7 +24,17 @@ function displayUserInfo() {
 
 function updateNavigation() {
   const user = checkAuth();
-  if (user && user.role !== 'admin') {
+  if (user && user.role === 'employee') {
+    const navAssets = document.getElementById('navAssets');
+    const navReports = document.getElementById('navReports');
+    if (navAssets) {
+      navAssets.style.display = 'none';
+    }
+    if (navReports) {
+      navReports.style.display = 'none';
+    }
+  }
+  if (user && user.role === 'manager') {
     const navAssets = document.getElementById('navAssets');
     if (navAssets) {
       navAssets.style.display = 'none';

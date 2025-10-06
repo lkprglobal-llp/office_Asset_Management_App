@@ -22,7 +22,7 @@
         <li id="navAssets"><a href="assets.html">Assets Management</a></li>
         <li><a href="borrow.html">Borrow Items</a></li>
         <li><a href="expenses.html" class="active">Expense Requests</a></li>
-        <li><a href="reports.html">Reports & Export</a></li>
+        <li id="navReports"><a href="reports.html">Reports & Export</a></li>
       </ul>
     </nav>
     
@@ -61,6 +61,11 @@
             <label for="expenseDescription">Description / Reason</label>
             <textarea id="expenseDescription" rows="3" required></textarea>
           </div>
+          <div class="form-group">
+            <label for="billUpload">Upload Bill / Receipt</label>
+            <input type="file" id="billUpload" accept="image/*,.pdf" required>
+            <small style="color: #666; display: block; margin-top: 5px;">Accepted formats: Images (JPG, PNG) or PDF</small>
+          </div>
           <button type="submit" class="btn btn-primary">Submit Request</button>
         </form>
       </div>
@@ -74,6 +79,7 @@
               <th>Type</th>
               <th>Amount</th>
               <th>Description</th>
+              <th>Bill</th>
               <th>Status</th>
               <th>Payment Status</th>
             </tr>
