@@ -1,102 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Borrow Items - Asset & Expense Management</title>
-  <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-  <div class="header">
-    <h1>Office Asset & Expense Management System</h1>
-    <div class="user-info">
-      <span id="userDisplay"></span>
-      <button onclick="logout()" class="btn btn-secondary">Logout</button>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Borrow Items - Asset & Expense Management</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div class="header">
+      <h1>Office Asset & Expense Management System</h1>
+      <div class="user-info">
+        <span id="userDisplay"></span>
+        <button onclick="logout()" class="btn btn-secondary">Logout</button>
+      </div>
     </div>
-  </div>
-  
-  <div class="container">
-    <nav class="sidebar">
-      <ul>
-        <li><a href="dashboard.html">Dashboard</a></li>
-        <li id="navAssets"><a href="assets.html">Assets Management</a></li>
-        <li><a href="borrow.html" class="active">Borrow Items</a></li>
-        <li><a href="expenses.html">Expense Requests</a></li>
-        <li id="navReports"><a href="reports.html">Reports & Export</a></li>
-      </ul>
-    </nav>
-    
-    <main class="main-content">
-      <h2>Borrow Items</h2>
-      
-      <div class="form-container">
-        <h3>Checkout Asset</h3>
-        <form id="borrowForm">
-          <div class="form-group">
-            <label for="borrowAsset">Select Asset</label>
-            <select id="borrowAsset" required>
-              <option value="">Select an asset</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="borrowerName">Borrower Name</label>
-            <input type="text" id="borrowerName" readonly required>
-          </div>
-          <div class="form-group">
-            <label for="borrowDate">Date & Time Taken</label>
-            <input type="datetime-local" id="borrowDate" required>
-          </div>
-          <div class="form-group">
-            <label for="dueDate">Due Date & Time</label>
-            <input type="datetime-local" id="dueDate" required>
-          </div>
-          <div class="form-group">
-            <label for="borrowPurpose">Purpose</label>
-            <textarea id="borrowPurpose" rows="3" required></textarea>
-          </div>
-          <button type="submit" class="btn btn-primary">Borrow Item</button>
-        </form>
-      </div>
-      
-      <div class="table-container">
-        <h3>My Borrowed Items</h3>
-        <table id="myBorrowingsTable">
-          <thead>
-            <tr>
-              <th>Asset Name</th>
-              <th>Borrowed On</th>
-              <th>Due Date</th>
-              <th>Purpose</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="myBorrowingsTableBody">
-          </tbody>
-        </table>
-      </div>
-      
-      <div class="table-container" id="allBorrowingsSection">
-        <h3>All Borrowed Items</h3>
-        <table id="allBorrowingsTable">
-          <thead>
-            <tr>
-              <th>Asset Name</th>
-              <th>Borrower</th>
-              <th>Borrowed On</th>
-              <th>Due Date</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="allBorrowingsTableBody">
-          </tbody>
-        </table>
-      </div>
-    </main>
-  </div>
-  
-  <script src="js/utils.js"></script>
-  <script src="js/borrow.js"></script>
-</body>
+
+    <div class="container">
+      <nav class="sidebar">
+        <ul>
+          <li><a href="dashboard.html">Dashboard</a></li>
+          <li id="navAssets"><a href="assets.html">Assets Management</a></li>
+          <li><a href="borrow.html" class="active">Borrow Items</a></li>
+          <li><a href="expenses.html">Expense Requests</a></li>
+          <li id="navReports"><a href="reports.html">Reports & Export</a></li>
+        </ul>
+      </nav>
+
+      <main class="main-content">
+        <h2>Borrow Items</h2>
+
+        <div class="form-container">
+          <h3>Checkout Asset</h3>
+          <form id="borrowForm">
+            <div class="form-group">
+              <label for="borrowAsset">Select Asset</label>
+              <select id="borrowAsset" required>
+                <option value="">Select an asset</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="borrowerName">Borrower Name</label>
+              <input type="text" id="borrowerName" required />
+            </div>
+            <div class="form-group">
+              <label for="borrowDate">Date & Time Taken</label>
+              <input type="datetime-local" id="borrowDate" required />
+            </div>
+            <div class="form-group">
+              <label for="dueDate">Due Date & Time</label>
+              <input type="datetime-local" id="dueDate" required />
+            </div>
+            <div class="form-group">
+              <label for="borrowPurpose">Purpose</label>
+              <textarea id="borrowPurpose" rows="3" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Borrow Item</button>
+          </form>
+        </div>
+
+        <div class="table-container">
+          <h3>My Borrowed Items</h3>
+          <table id="myBorrowingsTable">
+            <thead>
+              <tr>
+                <th>Asset Name</th>
+                <th>Borrowed On</th>
+                <th>Due Date</th>
+                <th>Purpose</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="myBorrowingsTableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="table-container" id="allBorrowingsSection">
+          <h3>All Borrowed Items</h3>
+          <table id="allBorrowingsTable">
+            <thead>
+              <tr>
+                <th>Asset Name</th>
+                <th>Borrower</th>
+                <th>Borrowed On</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="allBorrowingsTableBody"></tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/borrow.js"></script>
+  </body>
 </html>

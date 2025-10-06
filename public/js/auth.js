@@ -1,10 +1,4 @@
-const demoUsers = [
-  { username: 'admin', password: 'admin123', role: 'admin', name: 'Admin User' },
-  { username: 'manager', password: 'manager123', role: 'manager', name: 'Manager User' },
-  { username: 'employee', password: 'employee123', role: 'employee', name: 'Employee User' }
-];
-
-document.getElementById('loginForm').addEventListener('submit', function(e) {
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   
   const username = document.getElementById('username').value;
@@ -12,20 +6,25 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
   const role = document.getElementById('role').value;
   const errorDiv = document.getElementById('loginError');
   
-  const user = demoUsers.find(u => 
-    u.username === username && 
-    u.password === password && 
-    u.role === role
-  );
-  
-  if (user) {
-    localStorage.setItem('currentUser', JSON.stringify({
-      username: user.username,
-      name: user.name,
-      role: user.role
-    }));
-    window.location.href = 'dashboard.html';
-  } else {
-    errorDiv.textContent = 'Invalid credentials or role mismatch. Please check the demo credentials.';
+  try {
+    const response = await fetch('/api/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ username, password, role })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      localStorage.setItem('currentUser', JSON.stringify(data.user));
+      window.location.href = 'dashboard.html';
+    } else {
+      errorDiv.textContent = data.message || 'Invalid credentials or role mismatch. Please check the demo credentials.';
+    }
+  } catch (error) {
+    errorDiv.textContent = 'Login failed. Please try again.';
+    console.error('Login error:', error);
   }
 });

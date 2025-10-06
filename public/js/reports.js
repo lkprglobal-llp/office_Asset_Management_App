@@ -5,9 +5,14 @@ updateNavigation();
 let allBorrowings = [];
 let allExpenses = [];
 
-function loadBorrowingsReport() {
-  allBorrowings = JSON.parse(localStorage.getItem('borrowings')) || [];
-  filterBorrowings();
+async function loadBorrowingsReport() {
+  try {
+    const response = await fetch('/api/borrowings');
+    allBorrowings = await response.json();
+    filterBorrowings();
+  } catch (error) {
+    console.error('Error loading borrowings:', error);
+  }
 }
 
 function filterBorrowings() {
@@ -22,7 +27,7 @@ function filterBorrowings() {
       } else if (filterValue === 'Returned') {
         return b.status === 'Returned';
       } else if (filterValue === 'Overdue') {
-        const dueDate = new Date(b.dueDate);
+        const dueDate = new Date(b.due_date);
         return b.status === 'Borrowed' && now > dueDate;
       }
       return true;
@@ -40,7 +45,7 @@ function filterBorrowings() {
   
   filteredBorrowings.forEach(b => {
     const now = new Date();
-    const dueDate = new Date(b.dueDate);
+    const dueDate = new Date(b.due_date);
     const isOverdue = b.status === 'Borrowed' && now > dueDate;
     const statusClass = b.status === 'Returned' ? 'status-returned' : 
                        isOverdue ? 'status-overdue' : 'status-borrowed';
@@ -49,21 +54,26 @@ function filterBorrowings() {
     
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${b.assetName}</td>
-      <td>${b.borrowerName}</td>
-      <td>${formatDateTime(b.borrowDate)}</td>
-      <td>${formatDateTime(b.dueDate)}</td>
-      <td>${b.returnedDate ? formatDateTime(b.returnedDate) : '-'}</td>
+      <td>${b.asset_name}</td>
+      <td>${b.borrower_name}</td>
+      <td>${formatDateTime(b.borrow_date)}</td>
+      <td>${formatDateTime(b.due_date)}</td>
+      <td>${b.returned_date ? formatDateTime(b.returned_date) : '-'}</td>
       <td><span class="status-badge ${statusClass}">${statusText}</span></td>
     `;
     tbody.appendChild(tr);
   });
 }
 
-function loadExpensesReport() {
-  allExpenses = JSON.parse(localStorage.getItem('expenses')) || [];
-  filterExpenseReport();
-  calculateExpenseSummary();
+async function loadExpensesReport() {
+  try {
+    const response = await fetch('/api/expenses');
+    allExpenses = await response.json();
+    filterExpenseReport();
+    calculateExpenseSummary();
+  } catch (error) {
+    console.error('Error loading expenses:', error);
+  }
 }
 
 function filterExpenseReport() {
@@ -92,17 +102,17 @@ function filterExpenseReport() {
   filteredExpenses.forEach(e => {
     const statusClass = e.status === 'Approved' ? 'status-approved' : 
                        e.status === 'Rejected' ? 'status-rejected' : 'status-pending';
-    const paymentClass = e.paymentStatus === 'Paid' ? 'status-paid' : 'status-unpaid';
+    const paymentClass = e.payment_status === 'Paid' ? 'status-paid' : 'status-unpaid';
     
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${formatDate(e.date)}</td>
-      <td>${e.employeeName}</td>
+      <td>${e.employee_name}</td>
       <td>${e.type}</td>
       <td>₹${parseFloat(e.amount).toFixed(2)}</td>
       <td>${e.description}</td>
       <td><span class="status-badge ${statusClass}">${e.status}</span></td>
-      <td><span class="status-badge ${paymentClass}">${e.paymentStatus || 'Pending Payment'}</span></td>
+      <td><span class="status-badge ${paymentClass}">${e.payment_status || 'Pending Payment'}</span></td>
     `;
     tbody.appendChild(tr);
   });
@@ -127,26 +137,24 @@ function calculateExpenseSummary() {
 }
 
 function exportBorrowings() {
-  const borrowings = JSON.parse(localStorage.getItem('borrowings')) || [];
-  
-  if (borrowings.length === 0) {
+  if (allBorrowings.length === 0) {
     showNotification('No borrowings data to export', 'error');
     return;
   }
   
-  const data = borrowings.map(b => {
+  const data = allBorrowings.map(b => {
     const now = new Date();
-    const dueDate = new Date(b.dueDate);
+    const dueDate = new Date(b.due_date);
     const isOverdue = b.status === 'Borrowed' && now > dueDate;
     const status = b.status === 'Returned' ? 'Returned' : 
                   isOverdue ? 'Overdue' : 'Borrowed';
     
     return {
-      'Asset Name': b.assetName,
-      'Borrower': b.borrowerName,
-      'Borrowed On': formatDateTime(b.borrowDate),
-      'Due Date': formatDateTime(b.dueDate),
-      'Returned On': b.returnedDate ? formatDateTime(b.returnedDate) : '-',
+      'Asset Name': b.asset_name,
+      'Borrower': b.borrower_name,
+      'Borrowed On': formatDateTime(b.borrow_date),
+      'Due Date': formatDateTime(b.due_date),
+      'Returned On': b.returned_date ? formatDateTime(b.returned_date) : '-',
       'Status': status,
       'Purpose': b.purpose
     };
@@ -161,21 +169,19 @@ function exportBorrowings() {
 }
 
 function exportExpenses() {
-  const expenses = JSON.parse(localStorage.getItem('expenses')) || [];
-  
-  if (expenses.length === 0) {
+  if (allExpenses.length === 0) {
     showNotification('No expenses data to export', 'error');
     return;
   }
   
-  const data = expenses.map(e => ({
+  const data = allExpenses.map(e => ({
     'Date': formatDate(e.date),
-    'Employee': e.employeeName,
+    'Employee': e.employee_name,
     'Type': e.type,
     'Amount': parseFloat(e.amount).toFixed(2),
     'Description': e.description,
     'Status': e.status,
-    'Payment Status': e.paymentStatus || 'Pending Payment'
+    'Payment Status': e.payment_status || 'Pending Payment'
   }));
   
   const ws = XLSX.utils.json_to_sheet(data);
@@ -186,85 +192,95 @@ function exportExpenses() {
   showNotification('Expenses exported successfully', 'success');
 }
 
-function exportAssets() {
-  const assets = JSON.parse(localStorage.getItem('assets')) || [];
-  
-  if (assets.length === 0) {
-    showNotification('No assets data to export', 'error');
-    return;
-  }
-  
-  const data = assets.map(a => ({
-    'Asset Name': a.name,
-    'Category': a.category,
-    'Description': a.description || '-',
-    'Status': a.status
-  }));
-  
-  const ws = XLSX.utils.json_to_sheet(data);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Assets');
-  
-  XLSX.writeFile(wb, `Assets_${new Date().toISOString().split('T')[0]}.xlsx`);
-  showNotification('Assets exported successfully', 'success');
-}
-
-function exportAll() {
-  const assets = JSON.parse(localStorage.getItem('assets')) || [];
-  const borrowings = JSON.parse(localStorage.getItem('borrowings')) || [];
-  const expenses = JSON.parse(localStorage.getItem('expenses')) || [];
-  
-  const wb = XLSX.utils.book_new();
-  
-  if (assets.length > 0) {
-    const assetsData = assets.map(a => ({
+async function exportAssets() {
+  try {
+    const response = await fetch('/api/assets');
+    const assets = await response.json();
+    
+    if (assets.length === 0) {
+      showNotification('No assets data to export', 'error');
+      return;
+    }
+    
+    const data = assets.map(a => ({
       'Asset Name': a.name,
       'Category': a.category,
       'Description': a.description || '-',
       'Status': a.status
     }));
-    const wsAssets = XLSX.utils.json_to_sheet(assetsData);
-    XLSX.utils.book_append_sheet(wb, wsAssets, 'Assets');
+    
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Assets');
+    
+    XLSX.writeFile(wb, `Assets_${new Date().toISOString().split('T')[0]}.xlsx`);
+    showNotification('Assets exported successfully', 'success');
+  } catch (error) {
+    console.error('Error exporting assets:', error);
+    showNotification('Failed to export assets', 'error');
   }
-  
-  if (borrowings.length > 0) {
-    const borrowingsData = borrowings.map(b => {
-      const now = new Date();
-      const dueDate = new Date(b.dueDate);
-      const isOverdue = b.status === 'Borrowed' && now > dueDate;
-      const status = b.status === 'Returned' ? 'Returned' : 
-                    isOverdue ? 'Overdue' : 'Borrowed';
-      
-      return {
-        'Asset Name': b.assetName,
-        'Borrower': b.borrowerName,
-        'Borrowed On': formatDateTime(b.borrowDate),
-        'Due Date': formatDateTime(b.dueDate),
-        'Returned On': b.returnedDate ? formatDateTime(b.returnedDate) : '-',
-        'Status': status,
-        'Purpose': b.purpose
-      };
-    });
-    const wsBorrowings = XLSX.utils.json_to_sheet(borrowingsData);
-    XLSX.utils.book_append_sheet(wb, wsBorrowings, 'Borrowed Items');
+}
+
+async function exportAll() {
+  try {
+    const assetsRes = await fetch('/api/assets');
+    const assets = await assetsRes.json();
+    
+    const wb = XLSX.utils.book_new();
+    
+    if (assets.length > 0) {
+      const assetsData = assets.map(a => ({
+        'Asset Name': a.name,
+        'Category': a.category,
+        'Description': a.description || '-',
+        'Status': a.status
+      }));
+      const wsAssets = XLSX.utils.json_to_sheet(assetsData);
+      XLSX.utils.book_append_sheet(wb, wsAssets, 'Assets');
+    }
+    
+    if (allBorrowings.length > 0) {
+      const borrowingsData = allBorrowings.map(b => {
+        const now = new Date();
+        const dueDate = new Date(b.due_date);
+        const isOverdue = b.status === 'Borrowed' && now > dueDate;
+        const status = b.status === 'Returned' ? 'Returned' : 
+                      isOverdue ? 'Overdue' : 'Borrowed';
+        
+        return {
+          'Asset Name': b.asset_name,
+          'Borrower': b.borrower_name,
+          'Borrowed On': formatDateTime(b.borrow_date),
+          'Due Date': formatDateTime(b.due_date),
+          'Returned On': b.returned_date ? formatDateTime(b.returned_date) : '-',
+          'Status': status,
+          'Purpose': b.purpose
+        };
+      });
+      const wsBorrowings = XLSX.utils.json_to_sheet(borrowingsData);
+      XLSX.utils.book_append_sheet(wb, wsBorrowings, 'Borrowed Items');
+    }
+    
+    if (allExpenses.length > 0) {
+      const expensesData = allExpenses.map(e => ({
+        'Date': formatDate(e.date),
+        'Employee': e.employee_name,
+        'Type': e.type,
+        'Amount': parseFloat(e.amount).toFixed(2),
+        'Description': e.description,
+        'Status': e.status,
+        'Payment Status': e.payment_status || 'Pending Payment'
+      }));
+      const wsExpenses = XLSX.utils.json_to_sheet(expensesData);
+      XLSX.utils.book_append_sheet(wb, wsExpenses, 'Expense Requests');
+    }
+    
+    XLSX.writeFile(wb, `Office_Management_System_${new Date().toISOString().split('T')[0]}.xlsx`);
+    showNotification('All data exported successfully', 'success');
+  } catch (error) {
+    console.error('Error exporting all data:', error);
+    showNotification('Failed to export data', 'error');
   }
-  
-  if (expenses.length > 0) {
-    const expensesData = expenses.map(e => ({
-      'Date': formatDate(e.date),
-      'Employee': e.employeeName,
-      'Type': e.type,
-      'Amount': parseFloat(e.amount).toFixed(2),
-      'Description': e.description,
-      'Status': e.status,
-      'Payment Status': e.paymentStatus || 'Pending Payment'
-    }));
-    const wsExpenses = XLSX.utils.json_to_sheet(expensesData);
-    XLSX.utils.book_append_sheet(wb, wsExpenses, 'Expense Requests');
-  }
-  
-  XLSX.writeFile(wb, `Office_Management_System_${new Date().toISOString().split('T')[0]}.xlsx`);
-  showNotification('All data exported successfully', 'success');
 }
 
 loadBorrowingsReport();

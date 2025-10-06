@@ -1,143 +1,149 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Expense Requests - Asset & Expense Management</title>
-  <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-  <div class="header">
-    <h1>Office Asset & Expense Management System</h1>
-    <div class="user-info">
-      <span id="userDisplay"></span>
-      <button onclick="logout()" class="btn btn-secondary">Logout</button>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Expense Requests - Asset & Expense Management</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div class="header">
+      <h1>Office Asset & Expense Management System</h1>
+      <div class="user-info">
+        <span id="userDisplay"></span>
+        <button onclick="logout()" class="btn btn-secondary">Logout</button>
+      </div>
     </div>
-  </div>
-  
-  <div class="container">
-    <nav class="sidebar">
-      <ul>
-        <li><a href="dashboard.html">Dashboard</a></li>
-        <li id="navAssets"><a href="assets.html">Assets Management</a></li>
-        <li><a href="borrow.html">Borrow Items</a></li>
-        <li><a href="expenses.html" class="active">Expense Requests</a></li>
-        <li id="navReports"><a href="reports.html">Reports & Export</a></li>
-      </ul>
-    </nav>
-    
-    <main class="main-content">
-      <h2>Expense Requests</h2>
-      
-      <div class="form-container" id="expenseFormContainer">
-        <h3>Submit Expense Request</h3>
-        <form id="expenseForm">
-          <div class="form-group">
-            <label for="expenseDate">Date</label>
-            <input type="date" id="expenseDate" required>
-          </div>
-          <div class="form-group">
-            <label for="employeeName">Employee Name</label>
-            <input type="text" id="employeeName" readonly required>
-          </div>
-          <div class="form-group">
-            <label for="expenseType">Expense Type</label>
-            <select id="expenseType" required>
-              <option value="">Select Type</option>
-              <option value="Travel">Travel</option>
-              <option value="Food">Food</option>
-              <option value="Field Expenses">Field Expenses</option>
-              <option value="Watercan Charges">Watercan Charges</option>
-              <option value="Housekeeper Salary">Housekeeper Salary</option>
-              <option value="Office Supplies">Office Supplies</option>
-              <option value="Other">Other</option>
+
+    <div class="container">
+      <nav class="sidebar">
+        <ul>
+          <li><a href="dashboard.html">Dashboard</a></li>
+          <li id="navAssets"><a href="assets.html">Assets Management</a></li>
+          <li><a href="borrow.html">Borrow Items</a></li>
+          <li><a href="expenses.html" class="active">Expense Requests</a></li>
+          <li id="navReports"><a href="reports.html">Reports & Export</a></li>
+        </ul>
+      </nav>
+
+      <main class="main-content">
+        <h2>Expense Requests</h2>
+
+        <div class="form-container" id="expenseFormContainer">
+          <h3>Submit Expense Request</h3>
+          <form id="expenseForm">
+            <div class="form-group">
+              <label for="expenseDate">Date</label>
+              <input type="date" id="expenseDate" required />
+            </div>
+            <div class="form-group">
+              <label for="employeeName">Employee Name</label>
+              <input type="text" id="employeeName" required />
+            </div>
+            <div class="form-group">
+              <label for="expenseType">Expense Type</label>
+              <select id="expenseType" required>
+                <option value="">Select Type</option>
+                <option value="Travel">Travel</option>
+                <option value="Food">Food</option>
+                <option value="Field Expenses">Field Expenses</option>
+                <option value="Watercan Charges">Watercan Charges</option>
+                <option value="Housekeeper Salary">Housekeeper Salary</option>
+                <option value="Office Supplies">Office Supplies</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="expenseAmount">Amount (₹)</label>
+              <input type="number" id="expenseAmount" step="0.01" required />
+            </div>
+            <div class="form-group">
+              <label for="expenseDescription">Description / Reason</label>
+              <textarea id="expenseDescription" rows="3" required></textarea>
+            </div>
+            <div class="form-group">
+              <label for="billUpload">Upload Bill / Receipt</label>
+              <input
+                type="file"
+                id="billUpload"
+                accept="image/*,.pdf"
+                required
+              />
+              <small style="color: #666; display: block; margin-top: 5px"
+                >Accepted formats: Images (JPG, PNG) or PDF</small
+              >
+            </div>
+            <button type="submit" class="btn btn-primary">
+              Submit Request
+            </button>
+          </form>
+        </div>
+
+        <div class="table-container">
+          <h3>My Expense Requests</h3>
+          <table id="myExpensesTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Description</th>
+                <th>Bill</th>
+                <th>Status</th>
+                <th>Payment Status</th>
+              </tr>
+            </thead>
+            <tbody id="myExpensesTableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="table-container" id="approvalSection">
+          <h3>Pending Approvals</h3>
+          <table id="pendingExpensesTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Employee</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Description</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="pendingExpensesTableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="table-container" id="allExpensesSection">
+          <h3>All Expense Requests</h3>
+          <div class="filter-group">
+            <label for="statusFilter">Filter by Status:</label>
+            <select id="statusFilter" onchange="filterExpenses()">
+              <option value="all">All</option>
+              <option value="Pending">Pending</option>
+              <option value="Approved">Approved</option>
+              <option value="Rejected">Rejected</option>
             </select>
           </div>
-          <div class="form-group">
-            <label for="expenseAmount">Amount (₹)</label>
-            <input type="number" id="expenseAmount" step="0.01" required>
-          </div>
-          <div class="form-group">
-            <label for="expenseDescription">Description / Reason</label>
-            <textarea id="expenseDescription" rows="3" required></textarea>
-          </div>
-          <div class="form-group">
-            <label for="billUpload">Upload Bill / Receipt</label>
-            <input type="file" id="billUpload" accept="image/*,.pdf" required>
-            <small style="color: #666; display: block; margin-top: 5px;">Accepted formats: Images (JPG, PNG) or PDF</small>
-          </div>
-          <button type="submit" class="btn btn-primary">Submit Request</button>
-        </form>
-      </div>
-      
-      <div class="table-container">
-        <h3>My Expense Requests</h3>
-        <table id="myExpensesTable">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Type</th>
-              <th>Amount</th>
-              <th>Description</th>
-              <th>Bill</th>
-              <th>Status</th>
-              <th>Payment Status</th>
-            </tr>
-          </thead>
-          <tbody id="myExpensesTableBody">
-          </tbody>
-        </table>
-      </div>
-      
-      <div class="table-container" id="approvalSection">
-        <h3>Pending Approvals</h3>
-        <table id="pendingExpensesTable">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Employee</th>
-              <th>Type</th>
-              <th>Amount</th>
-              <th>Description</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="pendingExpensesTableBody">
-          </tbody>
-        </table>
-      </div>
-      
-      <div class="table-container" id="allExpensesSection">
-        <h3>All Expense Requests</h3>
-        <div class="filter-group">
-          <label for="statusFilter">Filter by Status:</label>
-          <select id="statusFilter" onchange="filterExpenses()">
-            <option value="all">All</option>
-            <option value="Pending">Pending</option>
-            <option value="Approved">Approved</option>
-            <option value="Rejected">Rejected</option>
-          </select>
+          <table id="allExpensesTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Employee</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Payment Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="allExpensesTableBody"></tbody>
+          </table>
         </div>
-        <table id="allExpensesTable">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Employee</th>
-              <th>Type</th>
-              <th>Amount</th>
-              <th>Status</th>
-              <th>Payment Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="allExpensesTableBody">
-          </tbody>
-        </table>
-      </div>
-    </main>
-  </div>
-  
-  <script src="js/utils.js"></script>
-  <script src="js/expenses.js"></script>
-</body>
+      </main>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/expenses.js"></script>
+  </body>
 </html>
