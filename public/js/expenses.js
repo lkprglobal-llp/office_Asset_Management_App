@@ -84,7 +84,8 @@ function loadAllExpenses() {
 
 function filterExpenses() {
   const expenses = JSON.parse(localStorage.getItem('expenses')) || [];
-  const filterValue = document.getElementById('statusFilter').value;
+  const statusFilterElement = document.getElementById('statusFilter');
+  const filterValue = statusFilterElement ? statusFilterElement.value : 'all';
   
   let filteredExpenses = expenses;
   if (filterValue !== 'all') {
@@ -177,12 +178,23 @@ function markAsPaid(expenseId) {
   }
 }
 
-const today = new Date();
-today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
-document.getElementById('expenseDate').value = today.toISOString().split('T')[0];
-document.getElementById('employeeName').value = user.name;
+if (user.role !== 'admin') {
+  const today = new Date();
+  today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+  const expenseDateElement = document.getElementById('expenseDate');
+  const employeeNameElement = document.getElementById('employeeName');
+  
+  if (expenseDateElement) {
+    expenseDateElement.value = today.toISOString().split('T')[0];
+  }
+  if (employeeNameElement) {
+    employeeNameElement.value = user.name;
+  }
+}
 
-document.getElementById('expenseForm').addEventListener('submit', function(e) {
+const expenseFormElement = document.getElementById('expenseForm');
+if (expenseFormElement) {
+  expenseFormElement.addEventListener('submit', function(e) {
   e.preventDefault();
   
   const date = document.getElementById('expenseDate').value;
@@ -212,11 +224,19 @@ document.getElementById('expenseForm').addEventListener('submit', function(e) {
   
   const newToday = new Date();
   newToday.setMinutes(newToday.getMinutes() - newToday.getTimezoneOffset());
-  document.getElementById('expenseDate').value = newToday.toISOString().split('T')[0];
-  document.getElementById('employeeName').value = user.name;
+  const expenseDateElement = document.getElementById('expenseDate');
+  const employeeNameElement = document.getElementById('employeeName');
+  
+  if (expenseDateElement) {
+    expenseDateElement.value = newToday.toISOString().split('T')[0];
+  }
+  if (employeeNameElement) {
+    employeeNameElement.value = user.name;
+  }
   
   loadMyExpenses();
-});
+  });
+}
 
 loadMyExpenses();
 loadPendingApprovals();
