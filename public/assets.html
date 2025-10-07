@@ -1,87 +1,114 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Assets Management - Asset & Expense Management</title>
-  <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-  <div class="header">
-    <h1>Office Asset & Expense Management System</h1>
-    <div class="user-info">
-      <span id="userDisplay"></span>
-      <button onclick="logout()" class="btn btn-secondary">Logout</button>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Assets Management - Asset & Expense Management</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div class="header">
+      <h1>LKPR Global - AMS</h1>
+      <div class="user-info">
+        <span id="userDisplay"></span>
+        <button onclick="logout()" class="btn btn-secondary">Logout</button>
+      </div>
     </div>
-  </div>
-  
-  <div class="container">
-    <nav class="sidebar">
-      <ul>
-        <li><a href="dashboard.html">Dashboard</a></li>
-        <li id="navAssets"><a href="assets.html" class="active">Assets Management</a></li>
-        <li><a href="borrow.html">Borrow Items</a></li>
-        <li><a href="expenses.html">Expense Requests</a></li>
-        <li id="navReports"><a href="reports.html">Reports & Export</a></li>
-      </ul>
-    </nav>
-    
-    <main class="main-content">
-      <div class="page-header">
-        <h2>Assets Management</h2>
-        <button onclick="showAddAssetForm()" class="btn btn-primary" id="addAssetBtn">Add New Asset</button>
-      </div>
-      
-      <div id="assetForm" class="form-container" style="display: none;">
-        <h3 id="formTitle">Add New Asset</h3>
-        <form id="assetFormElement">
-          <input type="hidden" id="assetId">
-          <div class="form-group">
-            <label for="assetName">Asset Name</label>
-            <input type="text" id="assetName" required>
-          </div>
-          <div class="form-group">
-            <label for="assetCategory">Category</label>
-            <select id="assetCategory" required>
-              <option value="">Select Category</option>
-              <option value="Computer">Computer (Desktop/Laptop)</option>
-              <option value="Camera">Camera & Accessories</option>
-              <option value="Printer">Printer</option>
-              <option value="Documents">Documents</option>
-              <option value="Office Supplies">Office Supplies</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="assetDescription">Description</label>
-            <textarea id="assetDescription" rows="3"></textarea>
-          </div>
-          <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Save Asset</button>
-            <button type="button" onclick="hideAssetForm()" class="btn btn-secondary">Cancel</button>
-          </div>
-        </form>
-      </div>
-      
-      <div class="table-container">
-        <table id="assetsTable">
-          <thead>
-            <tr>
-              <th>Asset Name</th>
-              <th>Category</th>
-              <th>Description</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="assetsTableBody">
-          </tbody>
-        </table>
-      </div>
-    </main>
-  </div>
-  
-  <script src="js/utils.js"></script>
-  <script src="js/assets.js"></script>
-</body>
+
+    <div class="container">
+      <nav class="sidebar">
+        <ul>
+          <li><a href="dashboard.html">Dashboard</a></li>
+          <li id="navAssets">
+            <a href="assets.html" class="active">Assets Management</a>
+          </li>
+          <li><a href="borrow.html">Borrow Items</a></li>
+          <li><a href="expenses.html">Expense Requests</a></li>
+          <li id="navReports"><a href="reports.html">Reports & Export</a></li>
+          <li id="attendanceReports">
+            <a href="attendance.html">Employee Attendance</a>
+          </li>
+        </ul>
+      </nav>
+
+      <main class="main-content">
+        <div class="page-header">
+          <h2>Assets Management</h2>
+          <button
+            onclick="showAddAssetForm()"
+            class="btn btn-primary"
+            id="addAssetBtn"
+          >
+            Add New Asset
+          </button>
+        </div>
+
+        <div id="assetForm" class="form-container" style="display: none">
+          <h3 id="formTitle">Add New Asset</h3>
+          <form id="assetFormElement">
+            <input type="hidden" id="assetId" />
+            <div class="form-group">
+              <label for="assetName">Asset Name</label>
+              <input type="text" id="assetName" required />
+            </div>
+
+            <div class="form-group">
+              <label for="assetCategory">Category</label>
+              <select id="assetCategory" required>
+                <option value="">Select Category</option>
+                <option value="Computer">Office Electronics</option>
+                <option value="Mobile">Office Mobile</option>
+                <option value="Camera">Camera & Accessories</option>
+                <option value="Printer">Printer</option>
+                <option value="Documents">Official Documents</option>
+                <option value="Office Supplies">Office Supplies</option>
+                <option value="Others">Others</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="assetType">Type</label>
+              <select id="assetType" required>
+                <option value="">Select Type</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="assetDescription">Asset Description</label>
+              <textarea type="text" id="assetDescription" row="3"></textarea>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">Save Asset</button>
+              <button
+                type="button"
+                onclick="hideAssetForm()"
+                class="btn btn-secondary"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="table-container">
+          <table id="assetsTable">
+            <thead>
+              <tr>
+                <th>Asset Name</th>
+                <th>Category</th>
+                <th>Type</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="assetsTableBody"></tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+    <script src="js/utils.js"></script>
+    <script src="js/assets.js"></script>
+  </body>
 </html>

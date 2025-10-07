@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Assets Management - Asset & Expense Management</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div class="header">
+      <h1>LKPR Global - AMS</h1>
+      <div class="user-info">
+        <span id="userDisplay"></span>
+        <button onclick="logout()" class="btn btn-secondary">Logout</button>
+      </div>
+    </div>
+
+    <div class="container">
+      <nav class="sidebar">
+        <ul>
+          <li><a href="dashboard.html">Dashboard</a></li>
+          <li id="navAssets">
+            <a href="assets.html">Assets Management</a>
+          </li>
+          <li><a href="borrow.html">Borrow Items</a></li>
+          <li><a href="expenses.html">Expense Requests</a></li>
+          <li id="navReports"><a href="reports.html">Reports & Export</a></li>
+          <li id="attendanceReports">
+            <a href="attendance.html" class="active">Employee Attendance</a>
+          </li>
+        </ul>
+      </nav>
+      <div class="main-content">
+        <h2>Employee Dashboard</h2>
+
+        <!-- Tabs -->
+        <div class="form-actions" style="margin-bottom: 20px">
+          <button
+            id="attendanceBtn"
+            class="btn btn-primary"
+            onclick="showTab('attendanceTab')"
+          >
+            Attendance
+          </button>
+          <button
+            id="leaveBtn"
+            class="btn btn-primary"
+            onclick="showTab('leaveTab')"
+          >
+            Apply Leave
+          </button>
+          <button
+            id="leaveAdminBtn"
+            class="btn btn-primary"
+            onclick="showTab('leaveAdminTab')"
+          >
+            Leave Requests
+          </button>
+          <button
+            id="employeeBtn"
+            class="btn btn-primary"
+            onclick="showTab('employeeTab')"
+          >
+            Add Employee
+          </button>
+        </div>
+
+        <!-- Attendance Tab -->
+        <div id="attendanceTab">
+          <div class="form-container">
+            <h3>Mark Attendance</h3>
+            <div class="form-group">
+              <label for="attendanceUserSelect">Employee:</label>
+              <select id="attendanceUserSelect"></select>
+            </div>
+
+            <div class="form-group">
+              <label>Current Time:</label>
+              <span id="currentTime"></span>
+            </div>
+
+            <div class="form-actions">
+              <button id="checkinBtn" class="btn btn-success">Check In</button>
+              <button id="checkoutBtn" class="btn btn-warning" disabled>
+                Check Out
+              </button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <h3>Monthly Attendance</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Check In</th>
+                  <th>Check Out</th>
+                  <th>Worked Hours</th>
+                </tr>
+              </thead>
+              <tbody id="attendanceBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Leave Apply Tab -->
+        <div id="leaveTab" style="display: none">
+          <div class="form-container">
+            <h3>Apply for Leave</h3>
+            <div class="form-group">
+              <label for="leaveUserSelect">Employee:</label>
+              <select id="leaveUserSelect"></select>
+            </div>
+            <div class="form-group">
+              <label>Leave Type:</label>
+              <select id="leaveType">
+                <option value="Casual">Casual</option>
+                <option value="Sick">Sick</option>
+                <option value="Earned">Earned</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Start Date:</label>
+              <input type="date" id="startDate" />
+            </div>
+
+            <div class="form-group">
+              <label>End Date:</label>
+              <input type="date" id="endDate" />
+            </div>
+
+            <div class="form-group">
+              <label>Reason:</label>
+              <textarea id="leaveReason" rows="3"></textarea>
+            </div>
+
+            <div class="form-actions">
+              <button id="applyLeaveBtn" class="btn btn-primary">
+                Apply Leave
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Leave Admin Tab -->
+        <div id="leaveAdminTab" style="display: none">
+          <div class="table-container">
+            <h3>Leave Requests</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Type</th>
+                  <th>Start</th>
+                  <th>End</th>
+                  <th>Reason</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="leaveRequestsBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Add Employee Tab -->
+        <div id="employeeTab" style="display: none">
+          <div class="form-container">
+            <h3>Add New Employee</h3>
+            <div class="form-group">
+              <label>Employee Name:</label>
+              <input type="text" id="newEmployeeName" />
+            </div>
+            <button id="addEmployeeBtn" class="btn btn-success">
+              Add Employee
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="js/utils.js"></script>
+    <script src="js/attendance.js"></script>
+  </body>
+</html>

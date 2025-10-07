@@ -1,117 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reports & Export - Asset & Expense Management</title>
-  <link rel="stylesheet" href="css/style.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-</head>
-<body>
-  <div class="header">
-    <h1>Office Asset & Expense Management System</h1>
-    <div class="user-info">
-      <span id="userDisplay"></span>
-      <button onclick="logout()" class="btn btn-secondary">Logout</button>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reports & Export - Asset & Expense Management</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  </head>
+  <body>
+    <div class="header">
+      <h1>LKPR Global - AMS</h1>
+      <div class="user-info">
+        <span id="userDisplay"></span>
+        <button onclick="logout()" class="btn btn-secondary">Logout</button>
+      </div>
     </div>
-  </div>
-  
-  <div class="container">
-    <nav class="sidebar">
-      <ul>
-        <li><a href="dashboard.html">Dashboard</a></li>
-        <li id="navAssets"><a href="assets.html">Assets Management</a></li>
-        <li><a href="borrow.html">Borrow Items</a></li>
-        <li><a href="expenses.html">Expense Requests</a></li>
-        <li id="navReports"><a href="reports.html" class="active">Reports & Export</a></li>
-      </ul>
-    </nav>
-    
-    <main class="main-content">
-      <h2>Reports & Export</h2>
-      
-      <div class="export-section">
-        <h3>Export Data to Excel</h3>
-        <div class="export-buttons">
-          <button onclick="exportBorrowings()" class="btn btn-success">Export Borrowed Items Log</button>
-          <button onclick="exportExpenses()" class="btn btn-success">Export Expense Requests</button>
-          <button onclick="exportAssets()" class="btn btn-success">Export Assets List</button>
-          <button onclick="exportAll()" class="btn btn-primary">Export All Data</button>
+
+    <div class="container">
+      <nav class="sidebar">
+        <ul>
+          <li><a href="dashboard.html">Dashboard</a></li>
+          <li id="navAssets"><a href="assets.html">Assets Management</a></li>
+          <li><a href="borrow.html">Borrow Items</a></li>
+          <li><a href="expenses.html">Expense Requests</a></li>
+          <li id="navReports">
+            <a href="reports.html" class="active">Reports & Export</a>
+          </li>
+          <li id="attendanceReports">
+            <a href="attendance.html">Employee Attendance</a>
+          </li>
+        </ul>
+      </nav>
+
+      <main class="main-content">
+        <h2>Reports & Export</h2>
+
+        <div class="export-section">
+          <h3>Export Data to Excel</h3>
+          <div class="export-buttons">
+            <button onclick="exportBorrowings()" class="btn btn-success">
+              Export Borrowed Items Log
+            </button>
+            <button onclick="exportExpenses()" class="btn btn-success">
+              Export Expense Requests
+            </button>
+            <button onclick="exportAssets()" class="btn btn-success">
+              Export Assets List
+            </button>
+            <button onclick="exportAll()" class="btn btn-primary">
+              Export All Data
+            </button>
+          </div>
         </div>
-      </div>
-      
-      <div class="table-container">
-        <h3>Borrowed Items History</h3>
-        <div class="filter-group">
-          <label for="borrowStatusFilter">Filter by Status:</label>
-          <select id="borrowStatusFilter" onchange="filterBorrowings()">
-            <option value="all">All</option>
-            <option value="Borrowed">Currently Borrowed</option>
-            <option value="Returned">Returned</option>
-            <option value="Overdue">Overdue</option>
-          </select>
+
+        <div class="table-container">
+          <h3>Borrowed Items History</h3>
+          <div class="filter-group">
+            <label for="borrowStatusFilter">Filter by Status:</label>
+            <select id="borrowStatusFilter" onchange="filterBorrowings()">
+              <option value="all">All</option>
+              <option value="Borrowed">Currently Borrowed</option>
+              <option value="Returned">Returned</option>
+              <option value="Overdue">Overdue</option>
+            </select>
+          </div>
+          <table id="borrowingsReportTable">
+            <thead>
+              <tr>
+                <th>Asset Name</th>
+                <th>Borrower</th>
+                <th>Borrowed On</th>
+                <th>Due Date</th>
+                <th>Returned On</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="borrowingsReportTableBody"></tbody>
+          </table>
         </div>
-        <table id="borrowingsReportTable">
-          <thead>
-            <tr>
-              <th>Asset Name</th>
-              <th>Borrower</th>
-              <th>Borrowed On</th>
-              <th>Due Date</th>
-              <th>Returned On</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="borrowingsReportTableBody">
-          </tbody>
-        </table>
-      </div>
-      
-      <div class="table-container">
-        <h3>Expense Requests Summary</h3>
-        <div class="filter-group">
-          <label for="expenseStatusFilter">Filter by Status:</label>
-          <select id="expenseStatusFilter" onchange="filterExpenseReport()">
-            <option value="all">All</option>
-            <option value="Pending">Pending</option>
-            <option value="Approved">Approved</option>
-            <option value="Rejected">Rejected</option>
-          </select>
-          <label for="expenseTypeFilter">Filter by Type:</label>
-          <select id="expenseTypeFilter" onchange="filterExpenseReport()">
-            <option value="all">All Types</option>
-            <option value="Travel">Travel</option>
-            <option value="Food">Food</option>
-            <option value="Field Expenses">Field Expenses</option>
-            <option value="Watercan Charges">Watercan Charges</option>
-            <option value="Housekeeper Salary">Housekeeper Salary</option>
-          </select>
+
+        <div class="table-container">
+          <h3>Expense Requests Summary</h3>
+          <div class="filter-group">
+            <label for="expenseStatusFilter">Filter by Status:</label>
+            <select id="expenseStatusFilter" onchange="filterExpenseReport()">
+              <option value="all">All</option>
+              <option value="Pending">Pending</option>
+              <option value="Approved">Approved</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+            <label for="expenseTypeFilter">Filter by Type:</label>
+            <select id="expenseTypeFilter" onchange="filterExpenseReport()">
+              <option value="all">All Types</option>
+              <option value="Travel">Travel</option>
+              <option value="Food">Food</option>
+              <option value="Field Expenses">Field Expenses</option>
+              <option value="Watercan Charges">Watercan Charges</option>
+              <option value="Housekeeper Salary">Housekeeper Salary</option>
+            </select>
+          </div>
+          <table id="expensesReportTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Employee</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Payment Status</th>
+              </tr>
+            </thead>
+            <tbody id="expensesReportTableBody"></tbody>
+          </table>
+          <div class="summary-stats">
+            <p>
+              <strong>Total Expenses:</strong> ₹<span id="totalExpenses"
+                >0</span
+              >
+            </p>
+            <p>
+              <strong>Approved Expenses:</strong> ₹<span id="approvedExpenses"
+                >0</span
+              >
+            </p>
+            <p>
+              <strong>Pending Expenses:</strong> ₹<span id="pendingExpenses"
+                >0</span
+              >
+            </p>
+          </div>
         </div>
-        <table id="expensesReportTable">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Employee</th>
-              <th>Type</th>
-              <th>Amount</th>
-              <th>Description</th>
-              <th>Status</th>
-              <th>Payment Status</th>
-            </tr>
-          </thead>
-          <tbody id="expensesReportTableBody">
-          </tbody>
-        </table>
-        <div class="summary-stats">
-          <p><strong>Total Expenses:</strong> ₹<span id="totalExpenses">0</span></p>
-          <p><strong>Approved Expenses:</strong> ₹<span id="approvedExpenses">0</span></p>
-          <p><strong>Pending Expenses:</strong> ₹<span id="pendingExpenses">0</span></p>
-        </div>
-      </div>
-    </main>
-  </div>
-  
-  <script src="js/utils.js"></script>
-  <script src="js/reports.js"></script>
-</body>
+      </main>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/reports.js"></script>
+  </body>
 </html>

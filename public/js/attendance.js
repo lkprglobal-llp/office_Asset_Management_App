@@ -1,0 +1,425 @@
+const user = checkAuth();
+displayUserInfo();
+updateNavigation();
+
+/* ------------------ TAB FUNCTION ------------------ */
+function showTab(tabId) {
+  const tabs = ["attendanceTab", "leaveTab", "leaveAdminTab", "employeeTab"];
+  tabs.forEach((id) => (document.getElementById(id).style.display = "none"));
+  document.getElementById(tabId).style.display = "block";
+}
+
+function showButton() {
+  if (user.role === "employee") {
+    document.getElementById("leaveAdminBtn").style.display = "none";
+    document.getElementById("employeeBtn").style.display = "none";
+  } else if (user.role === "admin") {
+    document.getElementById("leaveBtn").style.display = "none"; // if admin shouldn't apply leave
+  }
+}
+showButton();
+/* ------------------ ELEMENTS ------------------ */
+const attendanceUserSelect = document.getElementById("attendanceUserSelect");
+const leaveUserSelect = document.getElementById("leaveUserSelect");
+const currentTime = document.getElementById("currentTime");
+const checkinBtn = document.getElementById("checkinBtn");
+const checkoutBtn = document.getElementById("checkoutBtn");
+const attendanceBody = document.getElementById("attendanceBody");
+const employeeTableBody = document.getElementById("employeeTableBody");
+const leaveRequestsBody = document.getElementById("leaveRequestsBody");
+
+let attendanceselectedUser = attendanceUserSelect.value;
+let leaveselectedUser = leaveUserSelect.value;
+let employeeList = [];
+
+/* ------------------ CURRENT TIME ------------------ */
+setInterval(() => {
+  const now = new Date();
+  currentTime.textContent = now.toLocaleString();
+}, 1000);
+
+function updateAttendanceButtons() {
+  const employeeId = attendanceUserSelect.value;
+  fetch(`/api/attendance/${employeeId}`)
+    .then((res) => res.json())
+    .then((data) => {
+      // Find today's record
+      const today = new Date().toLocaleDateString();
+      const todayRecord = data.find(
+        (a) => new Date(a.check_in).toLocaleDateString() === today
+      );
+
+      if (!todayRecord) {
+        checkinBtn.disabled = false;
+        checkoutBtn.disabled = true;
+      } else if (todayRecord && !todayRecord.check_out) {
+        checkinBtn.disabled = true;
+        checkoutBtn.disabled = false;
+      } else {
+        checkinBtn.disabled = true;
+        checkoutBtn.disabled = true;
+      }
+    });
+}
+/* ------------------ LOAD EMPLOYEES ------------------ */
+function loadEmployees() {
+  fetch("/api/users")
+    .then((res) => res.json())
+    .then((users) => {
+      employeeList = users;
+
+      // Populate Attendance Dropdown
+      attendanceUserSelect.innerHTML = "";
+      users.forEach((u) => {
+        const opt = document.createElement("option");
+        opt.value = u.id;
+        opt.textContent = u.name;
+        attendanceUserSelect.appendChild(opt);
+      });
+
+      // Populate Leave Dropdown
+      leaveUserSelect.innerHTML = "";
+      users.forEach((u) => {
+        const opt = document.createElement("option");
+        opt.value = u.id;
+        opt.textContent = u.name;
+        leaveUserSelect.appendChild(opt);
+      });
+
+      loadAttendance();
+      updateAttendanceButtons();
+    });
+}
+
+attendanceUserSelect.addEventListener("change", () => {
+  attendanceselectedUser = attendanceUserSelect.value;
+  loadAttendance();
+  updateAttendanceButtons();
+});
+
+// Event listener for leave dropdown
+leaveUserSelect?.addEventListener("change", () => {
+  leaveselectedUser = leaveUserSelect.value;
+});
+
+loadEmployees();
+loadAttendance();
+updateAttendanceButtons();
+
+/* ------------------ ATTENDANCE ------------------ */
+checkinBtn.addEventListener("click", () => {
+  const employeeId = attendanceUserSelect.value;
+  if (!navigator.geolocation) {
+    alert("Geolocation not supported");
+    return;
+  }
+  navigator.geolocation.getCurrentPosition((pos) => {
+    fetch("/api/checkin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        employee_id: employeeId,
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+      }),
+    })
+      .then((res) => res.json())
+      .then((r) => {
+        alert(r.message);
+        checkinBtn.disabled = true;
+        checkoutBtn.disabled = false;
+        loadAttendance();
+        updateAttendanceButtons();
+      });
+  });
+});
+
+checkoutBtn.addEventListener("click", () => {
+  const employeeId = attendanceUserSelect.value;
+  fetch("/api/checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ employee_id: employeeId }),
+  })
+    .then((res) => res.json())
+    .then((r) => {
+      alert(r.message);
+      checkinBtn.disabled = false;
+      checkoutBtn.disabled = true;
+      loadAttendance();
+      updateAttendanceButtons();
+    });
+});
+
+// function loadAttendance() {
+//   const employeeId = attendanceUserSelect.value;
+//   fetch(`/api/attendance/${employeeId}`)
+//     .then((res) => res.json())
+//     .then((data) => {
+//       attendanceBody.innerHTML = "";
+//       data.forEach((a) => {
+//         const date = new Date(a.check_in).toLocaleDateString();
+//         const checkIn = new Date(a.check_in).toLocaleTimeString();
+//         const checkOut = a.check_out
+//           ? new Date(a.check_out).toLocaleTimeString()
+//           : "-";
+//         // Calculate worked minutes if not present
+//         let workedMinutes = a.worked_minutes;
+//         if (workedMinutes === undefined && a.check_in && a.check_out) {
+//           workedMinutes =
+//             (new Date(a.check_out) - new Date(a.check_in)) / 60000;
+//         }
+//         const workedHours = workedMinutes
+//           ? (workedMinutes / 60).toFixed(2)
+//           : "-";
+//         const tr = document.createElement("tr");
+//         tr.innerHTML = `
+//           <td>${date}</td>
+//           <td>${checkIn}</td>
+//           <td>${checkOut}</td>
+//           <td>${workedHours}</td>
+//         `;
+//         attendanceBody.appendChild(tr);
+//       });
+//     });
+// }
+
+async function loadAttendance() {
+  const employeeId = attendanceUserSelect.value;
+  try {
+    const res = await fetch(`/api/attendance/${employeeId}`); // ✅ use user.id
+    const attendance = await res.json();
+
+    if (!Array.isArray(attendance)) {
+      console.error("Invalid response:", attendance);
+      return;
+    }
+
+    attendanceBody.innerHTML = "";
+    attendance.forEach((a) => {
+      const date = new Date(a.check_in).toLocaleDateString();
+      const workedMinutes = a.worked_minutes || 0;
+      const hours = Math.floor(workedMinutes / 60);
+      const minutes = workedMinutes % 60;
+      const duration = `${hours}h ${minutes}m`;
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${date}</td>
+        <td>${a.check_in ? new Date(a.check_in).toLocaleString() : "-"}</td>
+        <td>${a.check_out ? new Date(a.check_out).toLocaleString() : "-"}</td>
+        <td>${duration}</td>
+      `;
+      attendanceBody.appendChild(tr);
+    });
+  } catch (err) {
+    console.error("Error loading attendance:", err);
+  }
+}
+
+// function loadAttendance() {
+//   const employee = attendanceUserSelect.value;
+//   fetch(`/api/attendance/${employee}`)
+//     .then((res) => res.json())
+//     .then((data) => {
+//       attendanceBody.innerHTML = "";
+
+//       data.forEach((a) => {
+//         const tr = document.createElement("tr");
+
+//         const checkInTime = new Date(a.check_in);
+//         const checkOutTime = a.check_out ? new Date(a.check_out) : null;
+
+//         let workedHours = "-";
+//         if (checkOutTime) {
+//           const diffMs = checkOutTime - checkInTime;
+//           const diffHours = diffMs / (1000 * 60 * 60); // convert ms → hours
+//           workedHours = diffHours.toFixed(2);
+//         }
+
+//         tr.innerHTML = `
+//           <td>${checkInTime.toLocaleDateString()}</td>
+//           <td>${checkInTime.toLocaleTimeString()}</td>
+//           <td>${checkOutTime ? checkOutTime.toLocaleTimeString() : "-"}</td>
+//           <td>${workedHours}</td>
+//         `;
+
+//         attendanceBody.appendChild(tr);
+//       });
+//     })
+//     .catch((err) => {
+//       console.error("Error loading attendance:", err);
+//     });
+// }
+
+/* ------------------ LEAVE APPLY ------------------ */
+const applyLeaveBtn = document.getElementById("applyLeaveBtn");
+applyLeaveBtn.addEventListener("click", () => {
+  if (user.role !== "employee") {
+    alert("Only employees can apply leave");
+    return;
+  }
+
+  const emp_id = leaveUserSelect.value;
+  const leaveData = {
+    user_id: emp_id,
+    name: document.getElementById("leaveUserSelect").value,
+    leave_type: document.getElementById("leaveType").value,
+    start_date: document.getElementById("startDate").value,
+    end_date: document.getElementById("endDate").value,
+    reason: document.getElementById("leaveReason").value,
+  };
+
+  fetch("/api/leave/apply", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(leaveData),
+  })
+    .then((res) => res.json())
+    .then((r) => {
+      alert(r.message);
+      document.getElementById("leaveReason").value = "";
+      loadLeaveRequests();
+    });
+});
+
+/* ------------------ LEAVE ADMIN ------------------ */
+// function loadLeaveRequests() {
+//   if (user.role !== "admin") return; // Only admin can view leave requests
+
+//   fetch("/api/leave/requests")
+//     .then(async (res) => {
+//       const text = await res.text(); // Read raw text to debug malformed responses
+//       try {
+//         const requests = JSON.parse(text);
+//         leaveRequestsBody.innerHTML = "";
+//         requests.forEach((r) => {
+//           const tr = document.createElement("tr");
+//           tr.innerHTML = `
+//             <td>${r.name}</td>
+//             <td>${r.leave_type}</td>
+//             <td>${r.start_date}</td>
+//             <td>${r.end_date}</td>
+//             <td>${r.reason}</td>
+//             <td>${r.status || "Pending"}</td>
+//             <td>
+//               <button class="btn btn-success" onclick="updateLeave(${
+//                 r.id
+//               }, 'Approved')">Approve</button>
+//               <button class="btn btn-danger" onclick="updateLeave(${
+//                 r.id
+//               }, 'Rejected')">Reject</button>
+//             </td>
+//           `;
+//           leaveRequestsBody.appendChild(tr);
+//         });
+//       } catch (err) {
+//         console.error("❌ Invalid JSON from /api/leave/requests:", text);
+//       }
+//     })
+//     .catch((err) => console.error("Fetch failed:", err));
+// }
+
+function loadLeaveRequests() {
+  if (user.role !== "admin") return; // only admin sees this
+  fetch("/api/leave/requests")
+    .then((res) => res.json())
+    .then((data) => {
+      const requests = Array.isArray(data) ? data : []; // ensure iterable
+      leaveRequestsBody.innerHTML = "";
+
+      requests.forEach((r) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${r.name}</td>
+          <td>${r.leave_type}</td>
+          <td>${r.start_date}</td>
+          <td>${r.end_date}</td>
+          <td>${r.reason}</td>
+          <td>${r.status || "Pending"}</td>
+          <td>
+            <button class="btn btn-success" onclick="updateLeave(${
+              r.id
+            }, 'Approved')">Approve</button>
+            <button class="btn btn-danger" onclick="updateLeave(${
+              r.id
+            }, 'Rejected')">Reject</button>
+          </td>
+        `;
+        leaveRequestsBody.appendChild(tr);
+      });
+    })
+    .catch((err) => console.error("Error fetching leave requests:", err));
+}
+
+function updateLeave(id, status) {
+  fetch("/api/leave/update", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ leave_id: id, status }),
+  })
+    .then((res) => res.json())
+    .then((r) => {
+      alert(r.message);
+      loadLeaveRequests();
+    });
+}
+
+loadLeaveRequests();
+
+/* ------------------ EMPLOYEE MANAGEMENT ------------------ */
+function loadEmployeesTable() {
+  employeeTableBody.innerHTML = "";
+  employeeList.forEach((emp) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${emp.name}</td>
+      <td>
+        <button class="btn btn-info" onclick="editEmployee(${emp.id},'${emp.name}')">Edit</button>
+        <button class="btn btn-danger" onclick="deleteEmployee(${emp.id})">Delete</button>
+      </td>
+    `;
+    employeeTableBody.appendChild(tr);
+  });
+}
+
+document.getElementById("addEmployeeBtn").addEventListener("click", () => {
+  const name = document.getElementById("newEmployeeName").value;
+  if (!name) return alert("Enter employee name");
+  fetch("/api/employees", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  })
+    .then((res) => res.json())
+    .then((r) => {
+      alert(r.message);
+      document.getElementById("newEmployeeName").value = "";
+      loadEmployees();
+    });
+});
+
+function editEmployee(id, oldName) {
+  const newName = prompt("Edit employee name", oldName);
+  if (!newName) return;
+  fetch(`/api/employees/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: newName }),
+  })
+    .then((res) => res.json())
+    .then((r) => {
+      alert(r.message);
+      loadEmployees();
+    });
+}
+
+function deleteEmployee(id) {
+  if (!confirm("Are you sure you want to delete this employee?")) return;
+  fetch(`/api/employees/${id}`, { method: "DELETE" })
+    .then((res) => res.json())
+    .then((r) => {
+      alert(r.message);
+      loadEmployees();
+    });
+}

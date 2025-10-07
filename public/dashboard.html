@@ -1,66 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard - Asset & Expense Management</title>
-  <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-  <div class="header">
-    <h1>Office Asset & Expense Management System</h1>
-    <div class="user-info">
-      <span id="userDisplay"></span>
-      <button onclick="logout()" class="btn btn-secondary">Logout</button>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard - Asset & Expense Management</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div class="header">
+      <h1>LKPR Global - AMS</h1>
+      <div class="user-info">
+        <span id="userDisplay"></span>
+        <button onclick="logout()" class="btn btn-secondary">Logout</button>
+      </div>
     </div>
-  </div>
-  
-  <div class="container">
-    <nav class="sidebar">
-      <ul>
-        <li><a href="dashboard.html" class="active">Dashboard</a></li>
-        <li id="navAssets"><a href="assets.html">Assets Management</a></li>
-        <li><a href="borrow.html">Borrow Items</a></li>
-        <li><a href="expenses.html">Expense Requests</a></li>
-        <li id="navReports"><a href="reports.html">Reports & Export</a></li>
-      </ul>
-    </nav>
-    
-    <main class="main-content">
-      <h2>Dashboard</h2>
-      
-      <div class="stats-grid">
-        <div class="stat-card">
-          <h3>Total Assets</h3>
-          <p class="stat-number" id="totalAssets">0</p>
+
+    <div class="container">
+      <nav class="sidebar">
+        <ul>
+          <li><a href="dashboard.html" class="active">Dashboard</a></li>
+          <li id="navAssets"><a href="assets.html">Assets Management</a></li>
+          <li><a href="borrow.html">Borrow Items</a></li>
+          <li><a href="expenses.html">Expense Requests</a></li>
+          <li id="navReports"><a href="reports.html">Reports & Export</a></li>
+          <li id="attendanceReports">
+            <a href="attendance.html">Employee Attendance</a>
+          </li>
+        </ul>
+      </nav>
+
+      <main class="main-content">
+        <h2>Dashboard</h2>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>Total Assets</h3>
+            <p class="stat-number" id="totalAssets">0</p>
+          </div>
+          <div class="stat-card">
+            <h3>Available Assets</h3>
+            <p class="stat-number" id="availableAssets">0</p>
+          </div>
+          <div class="stat-card">
+            <h3>Borrowed Assets</h3>
+            <p class="stat-number" id="borrowedAssets">0</p>
+          </div>
+          <div class="stat-card">
+            <h3>Pending Expenses</h3>
+            <p class="stat-number" id="pendingExpenses">0</p>
+          </div>
         </div>
-        <div class="stat-card">
-          <h3>Available Assets</h3>
-          <p class="stat-number" id="availableAssets">0</p>
+
+        <div class="dashboard-section">
+          <h3>Recent Borrowed Items</h3>
+          <div id="recentBorrowings" class="table-container"></div>
         </div>
-        <div class="stat-card">
-          <h3>Borrowed Assets</h3>
-          <p class="stat-number" id="borrowedAssets">0</p>
+
+        <div class="dashboard-section">
+          <h3>Recent Expense Requests</h3>
+          <div id="recentExpenses" class="table-container"></div>
         </div>
-        <div class="stat-card">
-          <h3>Pending Expenses</h3>
-          <p class="stat-number" id="pendingExpenses">0</p>
-        </div>
-      </div>
-      
-      <div class="dashboard-section">
-        <h3>Recent Borrowed Items</h3>
-        <div id="recentBorrowings" class="table-container"></div>
-      </div>
-      
-      <div class="dashboard-section">
-        <h3>Recent Expense Requests</h3>
-        <div id="recentExpenses" class="table-container"></div>
-      </div>
-    </main>
-  </div>
-  
-  <script src="js/utils.js"></script>
-  <script src="js/dashboard.js"></script>
-</body>
+      </main>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/dashboard.js"></script>
+  </body>
 </html>
