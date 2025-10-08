@@ -1,22 +1,34 @@
-const express = require("express");
-const path = require("path");
-const multer = require("multer");
-const { pool, initializeDatabase } = require("./db");
+import express from "express";
+import path from "path";
+import multer from "multer";
+import { pool, initializeDatabase } from "./db.js";
+
+// const express = require("express");
+// const path = require("path");
+// const multer = require("multer");
+// const { pool, initializeDatabase } = require("./db");
+
+export const config = {
+  api: {
+    bodyParser: false, // multer will handle body parsing
+  },
+};
 
 const app = express();
+app.use(express.json());
 const PORT = 5000;
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/");
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix =
-      Date.now() + "-" + Math.random().toString(36).substr(2, 9);
-    cb(null, uniqueSuffix + "-" + file.originalname);
-  },
-});
-
+// const storage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     cb(null, "uploads/");
+//   },
+//   filename: function (req, file, cb) {
+//     const uniqueSuffix =
+//       Date.now() + "-" + Math.random().toString(36).substr(2, 9);
+//     cb(null, uniqueSuffix + "-" + file.originalname);
+//   },
+// });
+const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 app.use(express.static("public"));
@@ -198,10 +210,12 @@ app.post("/api/expenses", upload.single("bill"), async (req, res) => {
       amount,
       description,
     } = req.body;
-    const billFilename = req.file ? req.file.filename : null;
+
+    const billData = req.file ? req.file.buffer : null;
+    const billType = req.file ? req.file.mimetype : null;
 
     await pool.query(
-      "INSERT INTO expenses (id, date, employee_username, employee_name, type, amount, description, bill_filename, status, payment_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO expenses (id, date, employee_username, employee_name, type, amount, description, status, payment_status, bill_data, bill_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
         id,
         date,
@@ -210,9 +224,10 @@ app.post("/api/expenses", upload.single("bill"), async (req, res) => {
         type,
         amount,
         description,
-        billFilename,
         "Pending",
         "Pending Payment",
+        billData,
+        billType,
       ]
     );
 
@@ -318,20 +333,6 @@ app.get("/api/attendance/:employee_id", async (req, res) => {
   }
 });
 
-// Get monthly leave info
-app.get("/api/leave/:employee_id", async (req, res) => {
-  try {
-    const employee_id = req.params.employee_id;
-    const [taken] = await pool.query(
-      "SELECT COUNT(*) AS taken FROM leave_requests WHERE employee_id=? AND MONTH(start_date)=MONTH(CURDATE()) AND status='Approved'",
-      [employee_id]
-    );
-    res.json({ total_leaves: 2, taken: taken[0].taken }); // Example: total 2 leaves per month
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
 // Apply for leave (Employee)
 app.post("/api/leave/apply", async (req, res) => {
   try {
@@ -347,19 +348,14 @@ app.post("/api/leave/apply", async (req, res) => {
   }
 });
 
-// Get all leave requests (Admin)
 app.get("/api/leave/requests", async (req, res) => {
-  try {
-    const [requests] = await pool.query(
-      `SELECT lr.id, lr.employee_id, e.name, lr.leave_type, lr.start_date, lr.end_date, lr.reason, lr.status
-       FROM leave_requests lr
-       JOIN employees e ON lr.employee_id = e.id
-       ORDER BY lr.start_date DESC`
-    );
-    res.json(requests);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+  const [requests] = await pool.query(
+    `SELECT lr.id, lr.employee_id, e.name, lr.leave_type, lr.start_date, lr.end_date, lr.reason, lr.status
+     FROM leave_requests lr
+     JOIN employees e ON lr.employee_id = e.id
+     ORDER BY lr.start_date DESC`
+  );
+  return res.json(requests);
 });
 
 // Approve or Reject leave (Admin)

@@ -1,4 +1,4 @@
-const mysql = require('mysql2/promise');
+const mysql = require("mysql2/promise");
 
 //local db config
 // const dbConfig = {
@@ -20,21 +20,16 @@ const dbConfig = {
   database: "u238482420_assets_mgmnt",
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
 };
 
-console.log('Database configuration:', {
-  host: dbConfig.host,
-  user: dbConfig.user,
-  database: dbConfig.database,
-  port: dbConfig.port
-});
+console.log("Database Connected");
 
 const pool = mysql.createPool(dbConfig);
 
 async function initializeDatabase() {
   const connection = await pool.getConnection();
-  
+
   try {
     await connection.query(`
       CREATE TABLE IF NOT EXISTS users (
@@ -46,7 +41,7 @@ async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    
+
     await connection.query(`
       CREATE TABLE IF NOT EXISTS assets (
         id VARCHAR(50) PRIMARY KEY,
@@ -57,7 +52,7 @@ async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    
+
     await connection.query(`
       CREATE TABLE IF NOT EXISTS borrowings (
         id VARCHAR(50) PRIMARY KEY,
@@ -74,7 +69,7 @@ async function initializeDatabase() {
         FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE RESTRICT
       )
     `);
-    
+
     await connection.query(`
       CREATE TABLE IF NOT EXISTS expenses (
         id VARCHAR(50) PRIMARY KEY,
@@ -95,8 +90,10 @@ async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    
-    const [existingUsers] = await connection.query('SELECT COUNT(*) as count FROM users');
+
+    const [existingUsers] = await connection.query(
+      "SELECT COUNT(*) as count FROM users"
+    );
     if (existingUsers[0].count === 0) {
       await connection.query(`
         INSERT INTO users (username, password, name, role) VALUES
@@ -104,12 +101,12 @@ async function initializeDatabase() {
         ('manager', 'manager123', 'Manager User', 'manager'),
         ('employee', 'employee123', 'Employee User', 'employee')
       `);
-      console.log('Default users created');
+      console.log("Default users created");
     }
-    
-    console.log('Database initialized successfully');
+
+    console.log("Database initialized successfully");
   } catch (error) {
-    console.error('Database initialization error:', error);
+    console.error("Database initialization error:", error);
     throw error;
   } finally {
     connection.release();

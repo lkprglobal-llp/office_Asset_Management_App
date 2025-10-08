@@ -151,106 +151,44 @@ checkoutBtn.addEventListener("click", () => {
     });
 });
 
-// function loadAttendance() {
-//   const employeeId = attendanceUserSelect.value;
-//   fetch(`/api/attendance/${employeeId}`)
-//     .then((res) => res.json())
-//     .then((data) => {
-//       attendanceBody.innerHTML = "";
-//       data.forEach((a) => {
-//         const date = new Date(a.check_in).toLocaleDateString();
-//         const checkIn = new Date(a.check_in).toLocaleTimeString();
-//         const checkOut = a.check_out
-//           ? new Date(a.check_out).toLocaleTimeString()
-//           : "-";
-//         // Calculate worked minutes if not present
-//         let workedMinutes = a.worked_minutes;
-//         if (workedMinutes === undefined && a.check_in && a.check_out) {
-//           workedMinutes =
-//             (new Date(a.check_out) - new Date(a.check_in)) / 60000;
-//         }
-//         const workedHours = workedMinutes
-//           ? (workedMinutes / 60).toFixed(2)
-//           : "-";
-//         const tr = document.createElement("tr");
-//         tr.innerHTML = `
-//           <td>${date}</td>
-//           <td>${checkIn}</td>
-//           <td>${checkOut}</td>
-//           <td>${workedHours}</td>
-//         `;
-//         attendanceBody.appendChild(tr);
-//       });
-//     });
-// }
-
 async function loadAttendance() {
   const employeeId = attendanceUserSelect.value;
-  try {
-    const res = await fetch(`/api/attendance/${employeeId}`); // ✅ use user.id
-    const attendance = await res.json();
 
-    if (!Array.isArray(attendance)) {
-      console.error("Invalid response:", attendance);
-      return;
+  const res = await fetch(`/api/attendance/${employeeId}`); // ✅ use user.id
+  const attendance = await res.json();
+
+  if (!Array.isArray(attendance)) {
+    console.error("Invalid response:", attendance);
+    return;
+  }
+
+  attendanceBody.innerHTML = "";
+  attendance.forEach((a) => {
+    const date = new Date(a.check_in).toLocaleDateString();
+    const checkIn = a.check_in ? new Date(a.check_in).toLocaleString() : "-";
+    const checkOut = a.check_out ? new Date(a.check_out).toLocaleString() : "-";
+    const workedMinutes = a.worked_minutes || 0;
+    if (
+      (workedMinutes === null || workedMinutes === undefined) &&
+      checkIn &&
+      checkOut
+    ) {
+      workedMinutes = Math.floor((checkOut - checkIn) / 60000);
     }
+    const hours = Math.floor(workedMinutes / 60);
+    const minutes = workedMinutes % 60;
+    const duration = `${hours}h ${minutes}m`;
 
-    attendanceBody.innerHTML = "";
-    attendance.forEach((a) => {
-      const date = new Date(a.check_in).toLocaleDateString();
-      const workedMinutes = a.worked_minutes || 0;
-      const hours = Math.floor(workedMinutes / 60);
-      const minutes = workedMinutes % 60;
-      const duration = `${hours}h ${minutes}m`;
-
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
         <td>${date}</td>
-        <td>${a.check_in ? new Date(a.check_in).toLocaleString() : "-"}</td>
-        <td>${a.check_out ? new Date(a.check_out).toLocaleString() : "-"}</td>
+        <td>${checkIn}</td>
+        <td>${checkOut}</td>
         <td>${duration}</td>
       `;
-      attendanceBody.appendChild(tr);
-    });
-  } catch (err) {
-    console.error("Error loading attendance:", err);
-  }
+    attendanceBody.appendChild(tr);
+  });
 }
-
-// function loadAttendance() {
-//   const employee = attendanceUserSelect.value;
-//   fetch(`/api/attendance/${employee}`)
-//     .then((res) => res.json())
-//     .then((data) => {
-//       attendanceBody.innerHTML = "";
-
-//       data.forEach((a) => {
-//         const tr = document.createElement("tr");
-
-//         const checkInTime = new Date(a.check_in);
-//         const checkOutTime = a.check_out ? new Date(a.check_out) : null;
-
-//         let workedHours = "-";
-//         if (checkOutTime) {
-//           const diffMs = checkOutTime - checkInTime;
-//           const diffHours = diffMs / (1000 * 60 * 60); // convert ms → hours
-//           workedHours = diffHours.toFixed(2);
-//         }
-
-//         tr.innerHTML = `
-//           <td>${checkInTime.toLocaleDateString()}</td>
-//           <td>${checkInTime.toLocaleTimeString()}</td>
-//           <td>${checkOutTime ? checkOutTime.toLocaleTimeString() : "-"}</td>
-//           <td>${workedHours}</td>
-//         `;
-
-//         attendanceBody.appendChild(tr);
-//       });
-//     })
-//     .catch((err) => {
-//       console.error("Error loading attendance:", err);
-//     });
-// }
 
 /* ------------------ LEAVE APPLY ------------------ */
 const applyLeaveBtn = document.getElementById("applyLeaveBtn");
@@ -260,16 +198,16 @@ applyLeaveBtn.addEventListener("click", () => {
     return;
   }
 
-  const emp_id = leaveUserSelect.value;
+  const selectedEmp = leaveUserSelect.selectedOptions[0];
+
   const leaveData = {
-    user_id: emp_id,
-    name: document.getElementById("leaveUserSelect").value,
+    employee_id: Number(selectedEmp.value),
+    name: selectedEmp.textContent,
     leave_type: document.getElementById("leaveType").value,
     start_date: document.getElementById("startDate").value,
     end_date: document.getElementById("endDate").value,
     reason: document.getElementById("leaveReason").value,
   };
-
   fetch("/api/leave/apply", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -279,71 +217,40 @@ applyLeaveBtn.addEventListener("click", () => {
     .then((r) => {
       alert(r.message);
       document.getElementById("leaveReason").value = "";
-      loadLeaveRequests();
     });
 });
 
 /* ------------------ LEAVE ADMIN ------------------ */
-// function loadLeaveRequests() {
-//   if (user.role !== "admin") return; // Only admin can view leave requests
-
-//   fetch("/api/leave/requests")
-//     .then(async (res) => {
-//       const text = await res.text(); // Read raw text to debug malformed responses
-//       try {
-//         const requests = JSON.parse(text);
-//         leaveRequestsBody.innerHTML = "";
-//         requests.forEach((r) => {
-//           const tr = document.createElement("tr");
-//           tr.innerHTML = `
-//             <td>${r.name}</td>
-//             <td>${r.leave_type}</td>
-//             <td>${r.start_date}</td>
-//             <td>${r.end_date}</td>
-//             <td>${r.reason}</td>
-//             <td>${r.status || "Pending"}</td>
-//             <td>
-//               <button class="btn btn-success" onclick="updateLeave(${
-//                 r.id
-//               }, 'Approved')">Approve</button>
-//               <button class="btn btn-danger" onclick="updateLeave(${
-//                 r.id
-//               }, 'Rejected')">Reject</button>
-//             </td>
-//           `;
-//           leaveRequestsBody.appendChild(tr);
-//         });
-//       } catch (err) {
-//         console.error("❌ Invalid JSON from /api/leave/requests:", text);
-//       }
-//     })
-//     .catch((err) => console.error("Fetch failed:", err));
-// }
-
 function loadLeaveRequests() {
-  if (user.role !== "admin") return; // only admin sees this
+  if (user.role !== "admin") return;
+
   fetch("/api/leave/requests")
     .then((res) => res.json())
     .then((data) => {
-      const requests = Array.isArray(data) ? data : []; // ensure iterable
+      const requests = Array.isArray(data) ? data : [];
       leaveRequestsBody.innerHTML = "";
 
       requests.forEach((r) => {
         const tr = document.createElement("tr");
+
+        const startDate = new Date(r.start_date).toLocaleDateString();
+        const endDate = new Date(r.end_date).toLocaleDateString();
+
+        const isDisabled = r.status && r.status !== "Pending";
         tr.innerHTML = `
           <td>${r.name}</td>
           <td>${r.leave_type}</td>
-          <td>${r.start_date}</td>
-          <td>${r.end_date}</td>
+          <td>${startDate}</td>
+          <td>${endDate}</td>
           <td>${r.reason}</td>
           <td>${r.status || "Pending"}</td>
           <td>
-            <button class="btn btn-success" onclick="updateLeave(${
-              r.id
-            }, 'Approved')">Approve</button>
-            <button class="btn btn-danger" onclick="updateLeave(${
-              r.id
-            }, 'Rejected')">Reject</button>
+            <button class="btn btn-success" 
+              onclick="updateLeave('${r.id}','Approved', this)" 
+              ${isDisabled ? "disabled" : ""}>Approve</button>
+            <button class="btn btn-danger" 
+              onclick="updateLeave('${r.id}','Rejected', this)" 
+              ${isDisabled ? "disabled" : ""}>Reject</button>
           </td>
         `;
         leaveRequestsBody.appendChild(tr);
@@ -352,7 +259,7 @@ function loadLeaveRequests() {
     .catch((err) => console.error("Error fetching leave requests:", err));
 }
 
-function updateLeave(id, status) {
+function updateLeave(id, status, btn) {
   fetch("/api/leave/update", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -361,11 +268,17 @@ function updateLeave(id, status) {
     .then((res) => res.json())
     .then((r) => {
       alert(r.message);
-      loadLeaveRequests();
-    });
-}
+      // Disable both buttons in the same row
+      const row = btn.closest("tr");
+      const buttons = row.querySelectorAll("button");
+      buttons.forEach((b) => (b.disabled = true));
 
-loadLeaveRequests();
+      // Update the status cell visually
+      row.querySelector("td:nth-child(6)").textContent = status;
+      loadLeaveRequests();
+    })
+    .catch((err) => console.error("Error updating leave:", err));
+}
 
 /* ------------------ EMPLOYEE MANAGEMENT ------------------ */
 function loadEmployeesTable() {
@@ -423,3 +336,8 @@ function deleteEmployee(id) {
       loadEmployees();
     });
 }
+
+loadEmployees();
+loadAttendance();
+loadLeaveRequests();
+updateAttendanceButtons();
