@@ -417,19 +417,19 @@ app.delete("/api/employees/:id", async (req, res) => {
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
+initializeDatabase();
+
 // initializeDatabase()
+//   .then(() => {
+//     app.listen(PORT, "0.0.0.0", () => {
+//       console.log(
+//         `Office Asset & Expense Management System running on http://0.0.0.0:${PORT}`
+//       );
+//     });
+//   })
+//   .catch((err) => {
+//     console.error("Failed to initialize database:", err);
+//     process.exit(1);
+//   });
 
-initializeDatabase()
-  .then(() => {
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(
-        `Office Asset & Expense Management System running on http://0.0.0.0:${PORT}`
-      );
-    });
-  })
-  .catch((err) => {
-    console.error("Failed to initialize database:", err);
-    process.exit(1);
-  });
-
-// export default app
+export default app;
