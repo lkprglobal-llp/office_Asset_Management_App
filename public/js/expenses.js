@@ -94,16 +94,21 @@ async function loadPendingApprovals() {
 
     pendingExpenses.forEach((e) => {
       const tr = document.createElement("tr");
+
+      // Get bill URL dynamically if BLOB exists
+      const billLink = e.bill_data
+        ? `<a href="${createBillUrlFromBuffer(
+            e.bill_data,
+            e.bill_type
+          )}" target="_blank">View Bill</a>`
+        : "-";
       tr.innerHTML = `
         <td>${formatDate(e.date)}</td>
         <td>${e.employee_name}</td>
         <td>${e.type}</td>
         <td>₹${parseFloat(e.amount).toFixed(2)}</td>
-        <td>${e.description}<br>${
-        e.bill_data
-          ? `<a href="${e.bill_data}" target="_blank">View Bill</a>`
-          : "No bill"
-      }</td>
+        <td>${e.description} <br> 
+        ${billLink} </td>
         <td>
           <button onclick="approveExpense('${
             e.id
@@ -161,11 +166,18 @@ async function filterExpenses() {
         e.payment_status === "Paid" ? "status-paid" : "status-unpaid";
 
       const tr = document.createElement("tr");
+      const billLink = e.bill_data
+        ? `<a href="${createBillUrlFromBuffer(
+            e.bill_data,
+            e.bill_type
+          )}" target="_blank">View Bill</a>`
+        : "-";
       tr.innerHTML = `
         <td>${formatDate(e.date)}</td>
         <td>${e.employee_name}</td>
         <td>${e.type}</td>
-        <td>₹${parseFloat(e.amount).toFixed(2)}</td>
+        <td>₹${parseFloat(e.amount).toFixed(2)}<br>
+        ${billLink}</td>
         <td><span class="status-badge ${statusClass}">${e.status}</span></td>
         <td><span class="status-badge ${paymentClass}">${
         e.payment_status || "Pending Payment"
