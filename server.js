@@ -321,19 +321,6 @@ app.post("/api/checkout", async (req, res) => {
   try {
     const { employee_id } = req.body;
     const time = new Date();
-    const [today] = await pool.query(
-      `SELECT * FROM attendance 
-   WHERE employee_id = ? 
-   AND DATE(check_in) = CURDATE() 
-   AND check_out IS NULL`,
-      [employee_id]
-    );
-
-    if (today.length > 0) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Already checked out today" });
-    }
 
     await pool.query(
       "UPDATE attendance SET check_out=? WHERE employee_id=? AND DATE(check_in)=CURDATE()",
