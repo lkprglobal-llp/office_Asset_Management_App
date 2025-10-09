@@ -290,6 +290,22 @@ app.post("/api/checkin", async (req, res) => {
   try {
     const { employee_id, latitude, longitude } = req.body;
     const time = new Date();
+
+    // Check if employee already checked in today
+    const [existing] = await pool.query(
+      `SELECT id FROM attendance 
+       WHERE employee_id = ? 
+       AND DATE(check_in) = CURDATE() 
+       AND check_out IS NULL`,
+      [employee_id]
+    );
+
+    if (existing.length > 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Already checked in today" });
+    }
+
     await pool.query(
       "INSERT INTO attendance (employee_id, check_in, latitude, longitude) VALUES (?, ?, ?, ?)",
       [employee_id, time, latitude, longitude]
@@ -305,6 +321,20 @@ app.post("/api/checkout", async (req, res) => {
   try {
     const { employee_id } = req.body;
     const time = new Date();
+    const [today] = await pool.query(
+      `SELECT * FROM attendance 
+   WHERE employee_id = ? 
+   AND DATE(check_in) = CURDATE() 
+   AND check_out IS NULL`,
+      [employee_id]
+    );
+
+    if (today.length > 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Already checked out today" });
+    }
+
     await pool.query(
       "UPDATE attendance SET check_out=? WHERE employee_id=? AND DATE(check_in)=CURDATE()",
       [time, employee_id]
@@ -356,6 +386,24 @@ app.get("/api/leave/requests", async (req, res) => {
      ORDER BY lr.start_date DESC`
   );
   return res.json(requests);
+});
+
+app.get("/api/leave/requests/:employee_id", async (req, res) => {
+  const { employee_id } = req.params;
+  let query = "";
+  let values = [];
+
+  if (employee_id) {
+    // For employee: show only their own requests
+    query = "SELECT * FROM leave_requests WHERE employee_id = ?";
+    values = [employee_id];
+  } else {
+    // For admin: show all
+    query = "SELECT * FROM leave_requests";
+  }
+
+  const [rows] = await pool.query(query, values);
+  return res.json(rows);
 });
 
 // Approve or Reject leave (Admin)
@@ -414,22 +462,115 @@ app.delete("/api/employees/:id", async (req, res) => {
   }
 });
 
+app.post("/api/compensatory/request", async (req, res) => {
+  try {
+    const { employee_id, work_date, requested_date, reason } = req.body;
+
+    // Prevent duplicate request for same date
+    const [existing] = await pool.query(
+      "SELECT id FROM compensatory_leave WHERE employee_id = ? AND work_date = ? AND requested_date = ?",
+      [employee_id, work_date, requested_date]
+    );
+
+    if (existing.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Request already exists for that date",
+      });
+    }
+
+    await pool.query(
+      "INSERT INTO compensatory_leave (employee_id, work_date, requested_date, reason) VALUES (?, ?, ?, ?)",
+      [employee_id, work_date, requested_date, reason]
+    );
+
+    res.json({
+      success: true,
+      message: "Compensatory leave request submitted",
+    });
+  } catch (error) {
+    console.error("Compensatory leave error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+app.put("/api/compensatory/update/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, approved_by } = req.body;
+
+    if (!["Approved", "Rejected"].includes(status)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid status" });
+    }
+
+    await pool.query(
+      `UPDATE compensatory_leave 
+       SET status = ?, approved_by = ?, approved_date = NOW() 
+       WHERE id = ?`,
+      [status, approved_by, id]
+    );
+
+    res.json({
+      success: true,
+      message: `Request ${status.toLowerCase()} successfully`,
+    });
+  } catch (error) {
+    console.error("Update compensatory error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+app.get("/api/compensatory/mine/:employee_id", async (req, res) => {
+  try {
+    const { employee_id } = req.params;
+    const [data] = await pool.query(
+      `SELECT c.id, c.work_date, c.requested_date, c.reason, c.status, c.approved_by, c.approved_date
+       FROM compensatory_leave c
+       WHERE c.employee_id = ?
+       ORDER BY c.work_date DESC`,
+      [employee_id]
+    );
+
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error("Fetch compensatory error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+app.get("/api/compensatory/requests", async (req, res) => {
+  try {
+    const [data] = await pool.query(
+      `SELECT c.id, c.work_date, c.requested_date, c.reason, c.status, c.approved_by, c.approved_date
+       FROM compensatory_leave c
+       ORDER BY c.work_date DESC`
+    );
+
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error("Fetch compensatory error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
-initializeDatabase();
+// initializeDatabase();
 
-// initializeDatabase()
-//   .then(() => {
-//     app.listen(PORT, "0.0.0.0", () => {
-//       console.log(
-//         `Office Asset & Expense Management System running on http://0.0.0.0:${PORT}`
-//       );
-//     });
-//   })
-//   .catch((err) => {
-//     console.error("Failed to initialize database:", err);
-//     process.exit(1);
-//   });
+initializeDatabase()
+  .then(() => {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(
+        `Office Asset & Expense Management System running on http://0.0.0.0:${PORT}`
+      );
+    });
+  })
+  .catch((err) => {
+    console.error("Failed to initialize database:", err);
+    process.exit(1);
+  });
 
-export default app;
+// export default app;

@@ -4,32 +4,53 @@ updateNavigation();
 
 /* ------------------ TAB FUNCTION ------------------ */
 function showTab(tabId) {
-  const tabs = ["attendanceTab", "leaveTab", "leaveAdminTab", "employeeTab"];
+  const tabs = [
+    "attendanceTab",
+    "leaveTab",
+    "leaveAdminTab",
+    "employeeTab",
+    "compTab",
+    "compAdminTab",
+  ];
   tabs.forEach((id) => (document.getElementById(id).style.display = "none"));
   document.getElementById(tabId).style.display = "block";
+
+  if (tabId === "employeeTab") loadEmployeesTable();
+  if (tabId === "attendanceTab") loadAttendance();
+  if (tabId === "leaveTab") loadLeaveEmployeeRequests();
+  if (tabId === "leaveAdminTab") loadLeaveRequests();
+  if (tabId === "compTab") loadMyCompRequests();
+  if (tabId === "compAdminTab") loadCompRequests();
 }
 
 function showButton() {
   if (user.role === "employee") {
     document.getElementById("leaveAdminBtn").style.display = "none";
     document.getElementById("employeeBtn").style.display = "none";
+    document.getElementById("compAdminBtn").style.display = "none";
   } else if (user.role === "admin") {
     document.getElementById("leaveBtn").style.display = "none"; // if admin shouldn't apply leave
+    document.getElementById("compBtn").style.display = "none"; // if admin shouldn't apply comp leave
   }
 }
 showButton();
 /* ------------------ ELEMENTS ------------------ */
 const attendanceUserSelect = document.getElementById("attendanceUserSelect");
 const leaveUserSelect = document.getElementById("leaveUserSelect");
+const compUserSelect = document.getElementById("compUserSelect");
 const currentTime = document.getElementById("currentTime");
 const checkinBtn = document.getElementById("checkinBtn");
 const checkoutBtn = document.getElementById("checkoutBtn");
 const attendanceBody = document.getElementById("attendanceBody");
 const employeeTableBody = document.getElementById("employeeTableBody");
 const leaveRequestsBody = document.getElementById("leaveRequestsBody");
+const leaveRequests = document.getElementById("leaveRequests");
+const compRequestsBody = document.getElementById("compRequestsBody");
+const compRequests = document.getElementById("compRequests");
 
 let attendanceselectedUser = attendanceUserSelect.value;
 let leaveselectedUser = leaveUserSelect.value;
+let compselectedUser = compUserSelect.value;
 let employeeList = [];
 
 /* ------------------ CURRENT TIME ------------------ */
@@ -84,6 +105,14 @@ function loadEmployees() {
         opt.value = u.id;
         opt.textContent = u.name;
         leaveUserSelect.appendChild(opt);
+      });
+      // Populate Compensatory Dropdown
+      compUserSelect.innerHTML = "";
+      users.forEach((u) => {
+        const opt = document.createElement("option");
+        opt.value = u.id;
+        opt.textContent = u.name;
+        compUserSelect.appendChild(opt);
       });
 
       loadAttendance();
@@ -280,6 +309,48 @@ function updateLeave(id, status, btn) {
     .catch((err) => console.error("Error updating leave:", err));
 }
 
+function loadLeaveEmployeeRequests() {
+  fetch(`/api/leave/requests`) // ✅ use user.id
+    .then((res) => res.json())
+    .then((data) => {
+      const requests = Array.isArray(data) ? data : [];
+      leaveRequests.innerHTML = "";
+
+      if (!data || data.length === 0) {
+        leaveRequests.innerHTML = `<tr><td colspan="6">No leave requests found</td></tr>`;
+        return;
+      }
+
+      requests.forEach((r) => {
+        const tr = document.createElement("tr");
+        const startDate = new Date(r.start_date).toLocaleDateString();
+        const endDate = new Date(r.end_date).toLocaleDateString();
+
+        tr.innerHTML = `
+          <td>${r.name}</td>
+          <td>${r.leave_type}</td>
+          <td>${startDate}</td>
+          <td>${endDate}</td>
+          <td>${r.reason}</td>
+          <td>${r.status || "Pending"}</td>
+          <td>${r.approved_by || "-"}</td>
+        `;
+        leaveRequests.appendChild(tr);
+      });
+    })
+    .catch((err) => console.error("Error fetching leave requests:", err));
+}
+function populateEmployeeDropdowns() {
+  const selects = [leaveUserSelect, attendanceUserSelect];
+  selects.forEach((sel) => {
+    if (sel) {
+      const opt = document.createElement("option");
+      opt.value = user.id;
+      opt.textContent = user.name;
+      sel.appendChild(opt);
+    }
+  });
+}
 /* ------------------ EMPLOYEE MANAGEMENT ------------------ */
 function loadEmployeesTable() {
   employeeTableBody.innerHTML = "";
@@ -337,7 +408,119 @@ function deleteEmployee(id) {
     });
 }
 
+async function submitCompRequest(e) {
+  e.preventDefault();
+
+  const work_date = document.getElementById("workDate").value;
+  const requested_date = document.getElementById("requestedDate").value;
+  const reason = document.getElementById("compReason").value;
+  const selectedCompEmp = compUserSelect.selectedOptions[0];
+  const res = await fetch("/api/compensatory/request", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      employee_id: selectedCompEmp.value,
+      work_date,
+      requested_date,
+      reason,
+    }),
+  });
+
+  const data = await res.json();
+  alert(data.message);
+  loadMyCompRequests();
+}
+
+document
+  .getElementById("submitCompRequest")
+  .addEventListener("click", submitCompRequest);
+
+async function loadMyCompRequests() {
+  const selectedCompEmp = compUserSelect.selectedOptions[0];
+  const valueCompEmp = compUserSelect.value;
+  const res = await fetch(`/api/compensatory/mine/${valueCompEmp}`);
+  const data = await res.json();
+
+  console.log(data);
+  const tbody = document.getElementById("compBody");
+  tbody.innerHTML = "";
+
+  if (data.success) {
+    data.data.forEach((r) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${selectedCompEmp.textContent}</td>
+        <td>${new Date(r.work_date).toLocaleDateString()}</td>
+        <td>${new Date(r.requested_date).toLocaleDateString()}</td>
+        <td>${r.reason}</td>
+        <td>${r.status}</td>
+        <td>${r.approved_by || "-"}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+}
+
+// Load all compensatory requests for admin
+async function loadCompRequests() {
+  if (user.role !== "admin") return;
+  const res = await fetch("/api/compensatory/requests");
+  const { success, data } = await res.json();
+
+  compRequestsBody.innerHTML = "";
+  const selectedCompEmp = compUserSelect.selectedOptions[0];
+  if (success && Array.isArray(data)) {
+    data.forEach((r) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${selectedCompEmp.textContent}</td>
+        <td>${new Date(r.work_date).toLocaleDateString()}</td>
+        <td>${new Date(r.requested_date).toLocaleDateString()}</td>
+        <td>${r.reason}</td>
+        <td>${r.status}</td>
+        <td>
+          <button class="btn btn-success" onclick="updateCompensatory('${
+            r.id
+          }', 'Approved', this)" ${
+        r.status !== "Pending" ? "disabled" : ""
+      }>Approve</button>
+          <button class="btn btn-danger" onclick="updateCompensatory('${
+            r.id
+          }', 'Rejected', this)" ${
+        r.status !== "Pending" ? "disabled" : ""
+      }>Reject</button>
+        </td>
+      `;
+      compRequestsBody.appendChild(tr);
+    });
+  }
+}
+
+function updateCompensatory(id, status, btn) {
+  fetch(`/api/compensatory/update/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id: id, status }),
+  })
+    .then((res) => res.json())
+    .then((r) => {
+      alert(r.message);
+      // Disable both buttons in the same row
+      const row = btn.closest("tr");
+      const buttons = row.querySelectorAll("button");
+      buttons.forEach((b) => (b.disabled = true));
+
+      // Update the status cell visually
+      row.querySelector("td:nth-child(6)").textContent = status;
+      loadCompRequests();
+    })
+    .catch((err) => console.error("Error updating compensatory:", err));
+}
+
 loadEmployees();
 loadAttendance();
 loadLeaveRequests();
 updateAttendanceButtons();
+loadLeaveEmployeeRequests();
+populateEmployeeDropdowns();
+loadMyCompRequests();

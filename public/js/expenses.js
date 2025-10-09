@@ -57,6 +57,7 @@ async function loadMyExpenses() {
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${formatDate(e.date)}</td>
+        <td>${e.employee_name}</td>
         <td>${e.type}</td>
         <td>₹${parseFloat(e.amount).toFixed(2)}</td>
         <td>${e.description}</td>
@@ -274,7 +275,7 @@ if (user.role !== "admin") {
     expenseDateElement.value = today.toISOString().split("T")[0];
   }
   if (employeeNameElement) {
-    employeeNameElement.value = user.name;
+    employeeNameElement.value;
   }
 }
 

@@ -43,7 +43,12 @@
             </div>
             <div class="form-group">
               <label for="borrowerName">Borrower Name</label>
-              <input type="text" id="borrowerName" required />
+              <input
+                type="text"
+                id="borrowerName"
+                placeholder="Enter Borrower Name / Employee Name"
+                required
+              />
             </div>
             <div class="form-group">
               <label for="borrowDate">Date & Time Taken</label>
@@ -51,11 +56,11 @@
             </div>
             <div class="form-group">
               <label for="dueDate">Due Date & Time</label>
-              <input type="datetime-local" id="dueDate" required />
+              <input type="datetime-local" id="dueDate" />
             </div>
             <div class="form-group">
               <label for="borrowPurpose">Purpose</label>
-              <textarea id="borrowPurpose" rows="3" required></textarea>
+              <textarea id="borrowPurpose" rows="3"></textarea>
             </div>
             <button type="submit" class="btn btn-primary">Borrow Item</button>
           </form>
@@ -67,6 +72,7 @@
             <thead>
               <tr>
                 <th>Asset Name</th>
+                <th>Borrower</th>
                 <th>Borrowed On</th>
                 <th>Due Date</th>
                 <th>Purpose</th>

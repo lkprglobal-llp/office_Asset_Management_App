@@ -32,7 +32,6 @@
       </nav>
       <div class="main-content">
         <h2>Employee Dashboard</h2>
-
         <!-- Tabs -->
         <div class="form-actions" style="margin-bottom: 20px">
           <button
@@ -42,19 +41,35 @@
           >
             Attendance
           </button>
-          <button
-            id="leaveBtn"
-            class="btn btn-primary"
-            onclick="showTab('leaveTab')"
-          >
-            Apply Leave
-          </button>
+          <div class="tabs">
+            <button
+              id="leaveBtn"
+              class="btn btn-primary"
+              onclick="showTab('leaveTab')"
+            >
+              Normal Leave
+            </button>
+            <button
+              id="compBtn"
+              class="btn btn-primary"
+              onclick="showTab('compTab')"
+            >
+              Compensatory Leave
+            </button>
+          </div>
           <button
             id="leaveAdminBtn"
             class="btn btn-primary"
             onclick="showTab('leaveAdminTab')"
           >
             Leave Requests
+          </button>
+          <button
+            id="compAdminBtn"
+            class="btn btn-primary"
+            onclick="showTab('compAdminTab')"
+          >
+            Compensatory Leave Requests
           </button>
           <button
             id="employeeBtn"
@@ -114,10 +129,8 @@
             <div class="form-group">
               <label>Leave Type:</label>
               <select id="leaveType">
-                <option value="Casual">Casual</option>
-                <option value="Sick">Sick</option>
-                <option value="Earned">Earned</option>
-                <option value="Other">Other</option>
+                <option value="Casual">Paid</option>
+                <option value="Sick">Unpaid</option>
               </select>
             </div>
 
@@ -142,6 +155,75 @@
               </button>
             </div>
           </div>
+          <div class="table-container">
+            <h3>Leave Requests</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Type</th>
+                  <th>Start</th>
+                  <th>End</th>
+                  <th>Reason</th>
+                  <th>Status</th>
+                  <th>Approved By</th>
+                </tr>
+              </thead>
+              <tbody id="leaveRequests"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="compTab" style="display: none">
+          <div class="form-container">
+            <h3>Compensatory Leave Request</h3>
+            <div class="form-group">
+              <label for="compUserSelect">Employee:</label>
+              <select id="compUserSelect"></select>
+            </div>
+            <div class="form-group">
+              <label>Work Date:</label>
+              <input type="date" id="workDate" required />
+            </div>
+            <div class="form-group">
+              <label>Requested Date:</label>
+              <input type="date" id="requestedDate" required />
+            </div>
+
+            <div class="form-group">
+              <label>Reason:</label>
+              <input
+                type="text"
+                id="compReason"
+                placeholder="Worked for client project..."
+                required
+              />
+            </div>
+            <div class="form-group">
+              <button
+                class="btn btn-primary"
+                id="submitCompRequest"
+                type="submit"
+              >
+                Submit Request
+              </button>
+            </div>
+          </div>
+          <div class="table-container">
+            <h4>My Compensatory Requests</h4>
+            <table>
+              <thead>
+                <tr>
+                  <th>Employee Name</th>
+                  <th>Work Date</th>
+                  <th>Requested Date</th>
+                  <th>Reason</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="compBody"></tbody>
+            </table>
+          </div>
         </div>
 
         <!-- Leave Admin Tab -->
@@ -161,6 +243,26 @@
                 </tr>
               </thead>
               <tbody id="leaveRequestsBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Comp Admin Tab -->
+        <div id="compAdminTab" style="display: none">
+          <div class="table-container">
+            <h3>Compensatory Leave Requests</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Work Date</th>
+                  <th>Requested Date</th>
+                  <th>Reason</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="compRequestsBody"></tbody>
             </table>
           </div>
         </div>
