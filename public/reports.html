@@ -44,8 +44,11 @@
             <button onclick="exportExpenses()" class="btn btn-success">
               Export Expense Requests
             </button>
-            <button onclick="exportAssets()" class="btn btn-success">
+            <!-- <button onclick="exportAssets()" class="btn btn-success">
               Export Assets List
+            </button> -->
+            <button onclick="exportAttendance()" class="btn btn-success">
+              Export Attendance Records
             </button>
             <button onclick="exportAll()" class="btn btn-primary">
               Export All Data
@@ -83,28 +86,25 @@
           <h3>Expense Requests Summary</h3>
           <div class="filter-group">
             <label for="expenseStatusFilter">Filter by Status:</label>
-            <select id="expenseStatusFilter" onchange="filterExpenseReport()">
+            <select id="expenseStatusFilter">
               <option value="all">All</option>
-              <option value="Pending">Pending</option>
               <option value="Approved">Approved</option>
+              <option value="Pending">Pending</option>
               <option value="Rejected">Rejected</option>
             </select>
             <label for="expenseTypeFilter">Filter by Type:</label>
-            <select id="expenseTypeFilter" onchange="filterExpenseReport()">
+            <select id="expenseTypeFilter">
               <option value="all">All Types</option>
-              <option value="Travel">Travel</option>
-              <option value="Food">Food</option>
-              <option value="Field Expenses">Field Expenses</option>
-              <option value="Watercan Charges">Watercan Charges</option>
-              <option value="Housekeeper Salary">Housekeeper Salary</option>
             </select>
           </div>
+
           <table id="expensesReportTable">
             <thead>
               <tr>
                 <th>Date</th>
                 <th>Employee</th>
                 <th>Type</th>
+                <th>Invoice Number</th>
                 <th>Amount</th>
                 <th>Description</th>
                 <th>Status</th>

@@ -2,13 +2,56 @@ const user = checkAuth();
 displayUserInfo();
 updateNavigation();
 
-if (user.role !== "employee") {
-  document.getElementById("expenseFormContainer").style.display = "none";
+/* ------------------ TAB MANAGEMENT ------------------ */
+const Tabs = ["adminExpenseTab", "expenseCodeTab"];
+function showTab(tabId) {
+  Tabs.forEach((id) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.style.display = id === tabId ? "block" : "none";
+    }
+  });
 }
 
-if (user.role !== "admin") {
-  document.getElementById("approvalSection").style.display = "none";
-  document.getElementById("allExpensesSection").style.display = "none";
+/* ------------------ ROLE-BASED UI CONTROL ------------------ */
+window.addEventListener("DOMContentLoaded", () => {
+  const adminExpenseBtn = document.getElementById("adminExpensebtn");
+  const adminExpenseCodeBtn = document.getElementById("adminExpenseCodebtn");
+  const expenseFormContainer = document.getElementById("expenseFormContainer");
+  const approvalSection = document.getElementById("approvalSection");
+  const allExpensesSection = document.getElementById("allExpensesSection");
+
+  // If user is ADMIN
+  if (user.role === "admin") {
+    adminExpenseBtn.style.display = "inline-block";
+    adminExpenseCodeBtn.style.display = "inline-block";
+    showTab("adminExpenseTab");
+  }
+  // If user is EMPLOYEE or MANAGER
+  else {
+    // Hide admin-only buttons & sections
+    adminExpenseBtn.style.display = "none";
+    adminExpenseCodeBtn.style.display = "none";
+    approvalSection.style.display = "none";
+    allExpensesSection.style.display = "none";
+    document.getElementById("expenseCodeTab").style.display = "none";
+
+    // Show only user's form + my expenses
+    expenseFormContainer.style.display = "block";
+    showTab("adminExpenseTab"); // show only this tab (user’s form view)
+  }
+
+  // Load initial data
+  loadMyExpenses();
+  if (user.role === "admin") {
+    loadPendingApprovals();
+    loadAllExpenses();
+  }
+});
+
+const expenseTypeSelect = document.getElementById("expenseType");
+if (expenseTypeSelect) {
+  loadExpenseTypes();
 }
 
 function createBillUrlFromBuffer(billBuffer, billType) {
@@ -19,9 +62,43 @@ function createBillUrlFromBuffer(billBuffer, billType) {
   return URL.createObjectURL(blob);
 }
 
+async function loadExpenseTypes() {
+  const res = await fetch("/api/expensesTypes");
+  const types = await res.json();
+
+  const select = document.getElementById("expenseType");
+  select.innerHTML = '<option value="">Select Type</option>';
+  types.forEach((t) => {
+    select.innerHTML += `<option value="${t.type_name}">${t.type_name} - <b>${t.type_code}</b></option>`;
+  });
+}
+
+async function addExpenseType() {
+  const typeName = document.getElementById("newType").value.trim();
+  const typeCode = document
+    .getElementById("newTypeCode")
+    .value.trim()
+    .toUpperCase();
+
+  if (!typeName || !typeCode) {
+    alert("Please fill both fields");
+    return;
+  }
+
+  await fetch("/api/expense-types", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type_name: typeName, type_code: typeCode }),
+  });
+
+  document.getElementById("newType").value = "";
+  document.getElementById("newTypeCode").value = "";
+  loadExpenseTypes();
+}
+
 async function loadMyExpenses() {
   try {
-    const response = await fetch("/api/expenses");
+    const response = await fetch("/api/allexpenses");
     const expenses = await response.json();
     const myExpenses = expenses.filter(
       (e) => e.employee_username === user.username
@@ -59,6 +136,7 @@ async function loadMyExpenses() {
         <td>${formatDate(e.date)}</td>
         <td>${e.employee_name}</td>
         <td>${e.type}</td>
+        <td>${e.invoiceNumber}</td>
         <td>₹${parseFloat(e.amount).toFixed(2)}</td>
         <td>${e.description}</td>
         <td>${billLink}</td>
@@ -80,7 +158,7 @@ async function loadPendingApprovals() {
   }
 
   try {
-    const response = await fetch("/api/expenses");
+    const response = await fetch("/api/allexpenses");
     const expenses = await response.json();
     const pendingExpenses = expenses.filter((e) => e.status === "Pending");
     const tbody = document.getElementById("pendingExpensesTableBody");
@@ -107,6 +185,7 @@ async function loadPendingApprovals() {
         <td>${formatDate(e.date)}</td>
         <td>${e.employee_name}</td>
         <td>${e.type}</td>
+        <td>${e.invoiceNumber}</td>
         <td>₹${parseFloat(e.amount).toFixed(2)}</td>
         <td>${e.description} <br> 
         ${billLink} </td>
@@ -136,7 +215,7 @@ async function loadAllExpenses() {
 
 async function filterExpenses() {
   try {
-    const response = await fetch("/api/expenses");
+    const response = await fetch("/api/allexpenses");
     const expenses = await response.json();
     const statusFilterElement = document.getElementById("statusFilter");
     const filterValue = statusFilterElement ? statusFilterElement.value : "all";
@@ -177,6 +256,7 @@ async function filterExpenses() {
         <td>${formatDate(e.date)}</td>
         <td>${e.employee_name}</td>
         <td>${e.type}</td>
+        <td>${e.invoiceNumber}</td>
         <td>₹${parseFloat(e.amount).toFixed(2)}<br>
         ${billLink}</td>
         <td><span class="status-badge ${statusClass}">${e.status}</span></td>
@@ -201,11 +281,14 @@ async function filterExpenses() {
 async function approveExpense(expenseId) {
   if (confirm("Are you sure you want to approve this expense?")) {
     try {
-      const response = await fetch(`/api/expenses/${expenseId}/approve`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ approvedBy: user.username }),
-      });
+      const response = await fetch(
+        `/api/expensesRequest/${expenseId}/approve`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ approvedBy: user.username }),
+        }
+      );
 
       const data = await response.json();
 
@@ -224,7 +307,7 @@ async function approveExpense(expenseId) {
 async function rejectExpense(expenseId) {
   if (confirm("Are you sure you want to reject this expense?")) {
     try {
-      const response = await fetch(`/api/expenses/${expenseId}/reject`, {
+      const response = await fetch(`/api/expensesRequest/${expenseId}/reject`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rejectedBy: user.username }),
@@ -247,7 +330,7 @@ async function rejectExpense(expenseId) {
 async function markAsPaid(expenseId) {
   if (confirm("Mark this expense as paid?")) {
     try {
-      const response = await fetch(`/api/expenses/${expenseId}/pay`, {
+      const response = await fetch(`/api/expensesRequest/${expenseId}/pay`, {
         method: "PUT",
       });
 
@@ -279,6 +362,29 @@ if (user.role !== "admin") {
   }
 }
 
+async function generateInvoiceNumber(type) {
+  try {
+    const response = await fetch(`/api/expensesInvoice`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type }),
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      console.log("Generated Invoice Number:", data.invoiceNumber);
+      return data.invoiceNumber;
+    } else {
+      console.error("Invoice generation failed:", data.error);
+      return "INV-ERR";
+    }
+  } catch (error) {
+    console.error("Error generating invoice number:", error);
+    return "INV-000";
+  }
+}
+
 const expenseFormElement = document.getElementById("expenseForm");
 if (expenseFormElement) {
   expenseFormElement.addEventListener("submit", async function (e) {
@@ -296,6 +402,8 @@ if (expenseFormElement) {
       return;
     }
 
+    const invoiceNumber = await generateInvoiceNumber(type);
+
     try {
       const formData = new FormData();
       formData.append("id", generateId());
@@ -303,11 +411,12 @@ if (expenseFormElement) {
       formData.append("employeeUsername", user.username);
       formData.append("employeeName", employeename);
       formData.append("type", type);
+      formData.append("invoiceNumber", invoiceNumber);
       formData.append("amount", amount);
       formData.append("description", description);
       formData.append("bill", billFile);
 
-      const response = await fetch("/api/expenses", {
+      const response = await fetch("/api/expensesRequest", {
         method: "POST",
         body: formData,
       });

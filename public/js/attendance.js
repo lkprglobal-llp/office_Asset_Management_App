@@ -59,6 +59,37 @@ setInterval(() => {
   currentTime.textContent = now.toLocaleString();
 }, 1000);
 
+async function getCityName(latitude, longitude) {
+  const apiKey = "0adf6691926d4db6a7661f859117c796"; // OpenCage API Key
+  const apiUrl = `https://api.opencagedata.com/geocode/v1/json?q=${latitude}%2C+${longitude}&key=${apiKey}`;
+
+  try {
+    const response = await fetch(apiUrl);
+    const data = await response.json();
+
+    if (data.status.code == 200 && data.results.length > 0) {
+      // Find the city name from the address components
+      const townComponent = data.results[0].components.town;
+      const stateComponent = data.results[0].components.state;
+      const cityComponent = data.results[0].components.country;
+      if (cityComponent) {
+        return (
+          townComponent +
+          (stateComponent ? ", " + stateComponent : "") +
+          (cityComponent ? ", " + cityComponent : "")
+        );
+      } else {
+        return "City not found";
+      }
+    } else {
+      return "Reverse geocoding failed or no results found.";
+    }
+  } catch (error) {
+    console.error("Error during reverse geocoding:", error);
+    return "Error fetching city name.";
+  }
+}
+
 function updateAttendanceButtons() {
   const employeeId = attendanceUserSelect.value;
   fetch(`/api/attendance/${employeeId}`)
@@ -90,7 +121,8 @@ function loadEmployees() {
       employeeList = users;
 
       // Populate Attendance Dropdown
-      attendanceUserSelect.innerHTML = "";
+      attendanceUserSelect.innerHTML =
+        '<option value="">Select Employee</option>';
       users.forEach((u) => {
         const opt = document.createElement("option");
         opt.value = u.id;
@@ -99,7 +131,7 @@ function loadEmployees() {
       });
 
       // Populate Leave Dropdown
-      leaveUserSelect.innerHTML = "";
+      leaveUserSelect.innerHTML = '<option value="">Select Employee</option>';
       users.forEach((u) => {
         const opt = document.createElement("option");
         opt.value = u.id;
@@ -108,10 +140,10 @@ function loadEmployees() {
       });
       // Populate Compensatory Dropdown
       compUserSelect.innerHTML = "";
-      users.forEach((u) => {
+      users.forEach((c) => {
         const opt = document.createElement("option");
-        opt.value = u.id;
-        opt.textContent = u.name;
+        opt.value = c.id;
+        opt.textContent = c.name;
         compUserSelect.appendChild(opt);
       });
 
@@ -127,8 +159,15 @@ attendanceUserSelect.addEventListener("change", () => {
 });
 
 // Event listener for leave dropdown
-leaveUserSelect?.addEventListener("change", () => {
+leaveUserSelect.addEventListener("change", () => {
   leaveselectedUser = leaveUserSelect.value;
+  loadLeaveEmployeeRequests();
+});
+
+compUserSelect.addEventListener("change", () => {
+  compSelectedUser = compUserSelect.value;
+  loadCompRequests();
+  loadMyCompRequests();
 });
 
 loadEmployees();
@@ -181,40 +220,79 @@ checkoutBtn.addEventListener("click", () => {
 });
 
 async function loadAttendance() {
-  const employeeId = attendanceUserSelect.value;
+  const employeeId = Number(attendanceUserSelect.value); // convert to number
 
-  const res = await fetch(`/api/attendance/${employeeId}`); // ✅ use user.id
+  const res = await fetch(`/api/attendance/${employeeId}`);
   const attendance = await res.json();
 
   if (!Array.isArray(attendance)) {
     console.error("Invalid response:", attendance);
     return;
   }
-
   attendanceBody.innerHTML = "";
-  attendance.forEach((a) => {
+
+  let filteredAttendance = [];
+
+  if (user.role === "employee") {
+    filteredAttendance = attendance.filter((a) => a.employee_id === user.id);
+  } else if (user.role === "admin") {
+    filteredAttendance = employeeId
+      ? attendance.filter((a) => a.employee_id === user.id)
+      : attendance;
+  }
+
+  const location =
+    filteredAttendance.length > 0
+      ? await getCityName(
+          filteredAttendance[0].latitude,
+          filteredAttendance[0].longitude
+        )
+      : "-";
+
+  filteredAttendance.forEach((a) => {
     const date = new Date(a.check_in).toLocaleDateString();
-    const checkIn = a.check_in ? new Date(a.check_in).toLocaleString() : "-";
-    const checkOut = a.check_out ? new Date(a.check_out).toLocaleString() : "-";
-    const workedMinutes = a.worked_minutes || 0;
+    const checkInTime = a.check_in ? new Date(a.check_in) : null;
+    const checkOutTime = a.check_out ? new Date(a.check_out) : null;
+    const checkIn = checkInTime
+      ? checkInTime.toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
+          timeZone: "Asia/Kolkata",
+        })
+      : "-";
+    const checkOut = checkOutTime
+      ? checkOutTime.toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
+          timeZone: "Asia/Kolkata",
+        })
+      : "-";
+
+    let workedMinutes = a.worked_minutes || 0;
     if (
-      (workedMinutes === null || workedMinutes === undefined) &&
-      checkIn &&
-      checkOut
+      (!workedMinutes || workedMinutes === null) &&
+      checkInTime &&
+      checkOutTime
     ) {
-      workedMinutes = Math.floor((checkOut - checkIn) / 60000);
+      workedMinutes = Math.floor((checkOutTime - checkInTime) / 60000);
     }
+
     const hours = Math.floor(workedMinutes / 60);
     const minutes = workedMinutes % 60;
     const duration = `${hours}h ${minutes}m`;
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
-        <td>${date}</td>
-        <td>${checkIn}</td>
-        <td>${checkOut}</td>
-        <td>${duration}</td>
-      `;
+      <td>${date}</td>
+      <td>${checkIn}</td>
+      <td>${checkOut}</td>
+      <td>${location}</td>
+      <td>${duration}</td>
+    `;
     attendanceBody.appendChild(tr);
   });
 }
@@ -258,6 +336,11 @@ function loadLeaveRequests() {
     .then((data) => {
       const requests = Array.isArray(data) ? data : [];
       leaveRequestsBody.innerHTML = "";
+
+      if (!data || data.length === 0) {
+        leaveRequestsBody.innerHTML = `<tr><td colspan="7">No leave requests found</td></tr>`;
+        return;
+      }
 
       requests.forEach((r) => {
         const tr = document.createElement("tr");
@@ -341,7 +424,7 @@ function loadLeaveEmployeeRequests() {
     .catch((err) => console.error("Error fetching leave requests:", err));
 }
 function populateEmployeeDropdowns() {
-  const selects = [leaveUserSelect, attendanceUserSelect];
+  const selects = [leaveUserSelect, attendanceUserSelect, compUserSelect];
   selects.forEach((sel) => {
     if (sel) {
       const opt = document.createElement("option");
@@ -441,8 +524,7 @@ async function loadMyCompRequests() {
   const res = await fetch(`/api/compensatory/mine/${valueCompEmp}`);
   const data = await res.json();
 
-  console.log(data);
-  const tbody = document.getElementById("compBody");
+  const tbody = document.getElementById("compRequestsBody");
   tbody.innerHTML = "";
 
   if (data.success) {

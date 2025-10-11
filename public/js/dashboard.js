@@ -7,7 +7,7 @@ async function loadDashboardStats() {
     const [assetsRes, borrowingsRes, expensesRes] = await Promise.all([
       fetch("/api/assets"),
       fetch("/api/borrowings"),
-      fetch("/api/expenses"),
+      fetch("/api/allexpenses"),
     ]);
 
     const assets = await assetsRes.json();
@@ -76,7 +76,7 @@ async function loadRecentBorrowings() {
 
 async function loadRecentExpenses() {
   try {
-    const response = await fetch("/api/expenses");
+    const response = await fetch("/api/allexpenses");
     const expenses = await response.json();
     const recentExpenses = expenses.slice(-5).reverse();
 
@@ -88,7 +88,7 @@ async function loadRecentExpenses() {
     }
 
     let html =
-      "<table><thead><tr><th>Date</th><th>Expense Borrower</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead><tbody>";
+      "<table><thead><tr><th>Date</th><th>Expense Borrower</th><th>Type</th><th>Invoice Number</th><th>Amount</th><th>Status</th></tr></thead><tbody>";
 
     recentExpenses.forEach((e) => {
       const statusClass =
@@ -103,6 +103,7 @@ async function loadRecentExpenses() {
           <td>${formatDate(e.date)}</td>
           <td>${e.employee_name}</td>
           <td>${e.type}</td>
+          <td>${e.invoiceNumber}</td>
           <td>₹${parseFloat(e.amount).toFixed(2)}</td>
           <td><span class="status-badge ${statusClass}">${e.status}</span></td>
         </tr>
